@@ -1,3 +1,4 @@
+import { useLangStore } from '../../stores/langStore'
 import type { CSSProperties, ReactNode } from 'react'
 
 export type AIType = 'pure' | 'light' | 'heavy'
@@ -109,7 +110,8 @@ export function AIRatioBar({
   )
 }
 
-export function Badge({ type, sm, cn }: { type: AIType; sm?: boolean; cn?: boolean }) {
+export function Badge({ type, sm }: { type: AIType; sm?: boolean }) {
+  const { lang } = useLangStore()
   const b = AI_BADGES[type]
   if (!b) return null
   return (
@@ -124,7 +126,7 @@ export function Badge({ type, sm, cn }: { type: AIType; sm?: boolean; cn?: boole
       }}
     >
       <span className="dot" style={{ background: b.color, width: sm ? 5 : 6, height: sm ? 5 : 6 }} />
-      {cn ? b.zh : b.label}
+      {lang === 'zh' ? b.zh : b.label}
     </span>
   )
 }
@@ -231,27 +233,15 @@ export function BilingualTitle({
   size?: number
   align?: 'left' | 'center' | 'right'
 }) {
+  const { lang } = useLangStore()
   return (
     <div style={{ textAlign: align, lineHeight: 1.1 }}>
       <div
         className="display"
         style={{ fontSize: size, fontWeight: 400, letterSpacing: `${-0.01 * size}px` }}
       >
-        {en}
+        {lang === 'zh' && zh ? zh : en}
       </div>
-      {zh && (
-        <div
-          className="cjk"
-          style={{
-            fontSize: size * 0.55,
-            color: 'var(--ink-3)',
-            letterSpacing: '0.05em',
-            marginTop: 4,
-          }}
-        >
-          {zh}
-        </div>
-      )}
     </div>
   )
 }

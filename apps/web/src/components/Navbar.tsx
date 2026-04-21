@@ -6,7 +6,7 @@ import { Icon } from './mtr/primitives'
 
 const NAV_ITEMS: Array<[string, string, string, string]> = [
   ['/books', 'discover', 'Discover', '发现'],
-  ['/studio', 'studio', 'Studio', '工作室'],
+  ['/studio', 'studio', 'Studio', '写作台'],
   ['/social', 'social', 'Club', '书友圈'],
   ['/wiki', 'wiki', 'Wiki', '知识宇宙'],
   ['/dashboard', 'data', 'Data', '数据'],
@@ -103,19 +103,7 @@ export default function Navbar() {
                   gap: 6,
                 }}
               >
-                <span>{en}</span>
-                <span
-                  className="cjk"
-                  style={{ fontSize: 10, color: 'var(--ink-4)', letterSpacing: '.06em' }}
-                >
-                  {zh}
-                </span>
-                <span
-                  style={{
-                    borderBottom: active ? '1.5px solid var(--accent)' : '1.5px solid transparent',
-                    position: 'absolute',
-                  }}
-                />
+                <span>{lang === 'zh' ? zh : en}</span>
               </button>
             )
           })}
@@ -140,7 +128,7 @@ export default function Navbar() {
         >
           <Icon name="search" size={13} />
           <span className="sans" style={{ fontSize: 12 }}>
-            Search books, authors, CIDs…
+            {lang === 'zh' ? '搜索书籍、作者、CID…' : 'Search books, authors, CIDs…'}
           </span>
           <span className="mono" style={{ marginLeft: 'auto', fontSize: 10, opacity: 0.7 }}>
             ⌘K

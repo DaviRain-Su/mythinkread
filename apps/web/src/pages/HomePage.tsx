@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
+import { useLangStore } from '../stores/langStore'
 import {
   AIRatioBar,
   AI_BADGES,
@@ -202,6 +203,7 @@ type FilterKey = 'all' | AIType
 
 export default function HomePage() {
   const navigate = useNavigate()
+  const { lang } = useLangStore()
   const [books, setBooks] = useState<DisplayBook[]>(FALLBACK_BOOKS)
   const [filter, setFilter] = useState<FilterKey>('all')
 
@@ -265,11 +267,21 @@ export default function HomePage() {
                 textWrap: 'balance',
               }}
             >
-              The reader of{' '}
-              <span style={{ fontStyle: 'italic', color: 'var(--terracotta)' }}>machines</span>.
+              {lang === 'zh' ? (
+                <>
+                  机器之
+                  <span style={{ fontStyle: 'italic', color: 'var(--terracotta)' }}>书</span>
+                  ，人之读。
+                </>
+              ) : (
+                <>
+                  The reader of{' '}
+                  <span style={{ fontStyle: 'italic', color: 'var(--terracotta)' }}>machines</span>.
+                </>
+              )}
             </h1>
             <div
-              className="cjk"
+              className={lang === 'zh' ? 'cjk' : ''}
               style={{
                 fontSize: 18,
                 color: 'var(--ink-3)',
@@ -277,20 +289,30 @@ export default function HomePage() {
                 letterSpacing: '.08em',
               }}
             >
-              机器之书,人之读。一个 AI 原生的文学图书馆。
+              {lang === 'zh'
+                ? '一个 AI 原生的文学图书馆。'
+                : 'An AI-native literary library.'}
             </div>
           </div>
           <aside style={{ width: 240 }}>
             <div className="eyebrow" style={{ marginBottom: 10 }}>
-              Week in numbers
+              {lang === 'zh' ? '本周数据' : 'Week in numbers'}
             </div>
             <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 14 }}>
-              {[
-                ['2,184', 'New titles'],
-                ['847K', 'Minutes read'],
-                ['48.3%', 'Human·machine'],
-                ['12,041', 'CIDs minted'],
-              ].map(([v, label]) => (
+              {(lang === 'zh'
+                ? [
+                    ['2,184', '新作品'],
+                    ['847K', '阅读分钟'],
+                    ['48.3%', '人机比例'],
+                    ['12,041', 'CID 铸造'],
+                  ]
+                : [
+                    ['2,184', 'New titles'],
+                    ['847K', 'Minutes read'],
+                    ['48.3%', 'Human·machine'],
+                    ['12,041', 'CIDs minted'],
+                  ]
+              ).map(([v, label]) => (
                 <div key={label}>
                   <div className="display" style={{ fontSize: 26, lineHeight: 1 }}>
                     {v}
@@ -330,7 +352,7 @@ export default function HomePage() {
         >
           <Cover book={featured} size="xl" />
           <div>
-            <div className="eyebrow">This week&rsquo;s picked read</div>
+            <div className="eyebrow">{lang === 'zh' ? '本周精选' : "This week's picked read"}</div>
             <div style={{ marginTop: 10 }}>
               <BilingualTitle en={featured.title} zh={featured.zh} size={42} />
             </div>
@@ -344,7 +366,9 @@ export default function HomePage() {
                 textTransform: 'uppercase',
               }}
             >
-              By {featured.author} · {featured.chapters} ch · {featured.words.toLocaleString()} w
+              {lang === 'zh'
+                ? `${featured.author} · ${featured.chapters} 章 · ${featured.words.toLocaleString()} 字`
+                : `By ${featured.author} · ${featured.chapters} ch · ${featured.words.toLocaleString()} w`}
             </div>
             <p
               className="body-serif"
@@ -372,13 +396,13 @@ export default function HomePage() {
                 className="btn accent"
                 onClick={() => navigate(`/books/${featured.id}`)}
               >
-                <Icon name="book" size={12} /> Begin reading
+                <Icon name="book" size={12} /> {lang === 'zh' ? '开始阅读' : 'Begin reading'}
               </button>
               <button
                 className="btn ghost"
                 onClick={() => navigate(`/books/${featured.id}`)}
               >
-                Details
+                {lang === 'zh' ? '详情' : 'Details'}
               </button>
               <Badge type={featured.type} />
               <AIRatioBar pct={featured.aiPct} />
@@ -386,7 +410,7 @@ export default function HomePage() {
             </div>
           </div>
           <div style={{ borderLeft: '1px solid var(--rule)', paddingLeft: 22 }}>
-            <div className="eyebrow">AI · blend</div>
+            <div className="eyebrow">{lang === 'zh' ? 'AI 比例' : 'AI · blend'}</div>
             <div style={{ display: 'flex', alignItems: 'baseline', gap: 6, marginTop: 6 }}>
               <div
                 className="display"
@@ -395,17 +419,17 @@ export default function HomePage() {
                 {featured.aiPct}
               </div>
               <div className="mono" style={{ fontSize: 12, color: 'var(--ink-3)' }}>
-                % machine
+                % {lang === 'zh' ? '机器' : 'machine'}
               </div>
             </div>
             <div
               className="mono"
               style={{ fontSize: 10, color: 'var(--ink-3)', marginTop: 4 }}
             >
-              {100 - featured.aiPct}% human edit · 4,120 revisions
+              {100 - featured.aiPct}% {lang === 'zh' ? '人工编辑 · 4,120 次修订' : 'human edit · 4,120 revisions'}
             </div>
             <hr className="rule-h" style={{ margin: '18px 0' }} />
-            <div className="eyebrow">Editor&rsquo;s remark</div>
+            <div className="eyebrow">{lang === 'zh' ? '编辑评语' : "Editor's remark"}</div>
             <p
               style={{
                 fontSize: 13,
@@ -416,13 +440,15 @@ export default function HomePage() {
                 fontFamily: 'var(--font-body)',
               }}
             >
-              &ldquo;Reads like a ghost story that a mathematician has accidentally told.&rdquo;
+              &ldquo;{lang === 'zh'
+                ? '读像一个数学家不小心讲出的鬼故事。'
+                : 'Reads like a ghost story that a mathematician has accidentally told.'}&rdquo;
             </p>
             <div
               className="mono"
               style={{ fontSize: 10, color: 'var(--ink-4)', marginTop: 8 }}
             >
-              — WENLIN, CH. EDITOR
+              — WENLIN, {lang === 'zh' ? '主编' : 'CH. EDITOR'}
             </div>
           </div>
         </section>
@@ -441,13 +467,22 @@ export default function HomePage() {
           flexWrap: 'wrap',
         }}
       >
-        <div className="eyebrow">Filter by AI-blend</div>
-        {([
-          ['all', 'All', null],
-          ['pure', 'Pure AI', 'pure'],
-          ['light', 'Light collab', 'light'],
-          ['heavy', 'Heavy human', 'heavy'],
-        ] as Array<[FilterKey, string, AIType | null]>).map(([k, lbl, t]) => (
+        <div className="eyebrow">{lang === 'zh' ? '按 AI 比例筛选' : 'Filter by AI-blend'}</div>
+        {(
+          lang === 'zh'
+            ? ([
+                ['all', '全部', null],
+                ['pure', '纯 AI', 'pure'],
+                ['light', '轻度人机', 'light'],
+                ['heavy', '重度人机', 'heavy'],
+              ] as Array<[FilterKey, string, AIType | null]>)
+            : ([
+                ['all', 'All', null],
+                ['pure', 'Pure AI', 'pure'],
+                ['light', 'Light collab', 'light'],
+                ['heavy', 'Heavy human', 'heavy'],
+              ] as Array<[FilterKey, string, AIType | null]>)
+        ).map(([k, lbl, t]) => (
           <button
             key={k}
             className={`chip ${filter === k ? 'active' : ''}`}
@@ -493,13 +528,7 @@ export default function HomePage() {
               margin: 0,
             }}
           >
-            New from the archive
-            <span
-              className="cjk"
-              style={{ fontSize: 15, color: 'var(--ink-3)', marginLeft: 14 }}
-            >
-              新入档
-            </span>
+            {lang === 'zh' ? '新入档' : 'New from the archive'}
           </h2>
           <div className="mono" style={{ fontSize: 10, color: 'var(--ink-3)' }}>
             {filtered.length} TITLES
@@ -559,16 +588,8 @@ export default function HomePage() {
                     marginBottom: 2,
                   }}
                 >
-                  {b.title}
+                  {lang === 'zh' && b.zh ? b.zh : b.title}
                 </div>
-                {b.zh && (
-                  <div
-                    className="cjk"
-                    style={{ fontSize: 12, color: 'var(--ink-3)', marginBottom: 8 }}
-                  >
-                    {b.zh}
-                  </div>
-                )}
                 <div
                   className="mono"
                   style={{
@@ -579,7 +600,7 @@ export default function HomePage() {
                     textTransform: 'uppercase',
                   }}
                 >
-                  By {b.author}
+                  {lang === 'zh' ? b.author : `By ${b.author}`}
                 </div>
                 <p
                   style={{
