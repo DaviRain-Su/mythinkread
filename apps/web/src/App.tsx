@@ -20,6 +20,17 @@ import PublicDomainBooksPage from './pages/public-domain/PublicDomainBooksPage'
 import BlogPage from './pages/blog/BlogPage'
 import BlogSettingsPage from './pages/blog/BlogSettingsPage'
 import CollaboratePage from './pages/collaborate/CollaboratePage'
+import CreatorStudioPage from './pages/studio/CreatorStudioPage'
+import SocialPage from './pages/social/SocialPage'
+import DashboardPage from './pages/dashboard/DashboardPage'
+import WikiPage from './pages/wiki/WikiPage'
+import WikiEntityPage from './pages/wiki/WikiEntityPage'
+import WikiTimelinePage from './pages/wiki/WikiTimelinePage'
+import ReaderXLPage from './pages/reader/ReaderXLPage'
+import AudioV2Page from './pages/audio/AudioV2Page'
+import PublishGatePage from './pages/publish/PublishGatePage'
+import LeaderboardsPage from './pages/leaderboards/LeaderboardsPage'
+import OnboardingPage from './pages/onboarding/OnboardingPage'
 import Navbar from './components/Navbar'
 
 function App() {
@@ -31,16 +42,22 @@ function App() {
         <Route path="/login" element={<LoginPage />} />
         <Route path="/register" element={<RegisterPage />} />
         <Route path="/create" element={<CreateBookPage />} />
+        <Route path="/studio" element={<CreatorStudioPage />} />
         <Route path="/books" element={<BooksPage />} />
         <Route path="/books/:bookId" element={<BookDetailPage />} />
         <Route path="/books/:bookId/read/:chapterId" element={<BookReaderPage />} />
+        <Route path="/reader-xl" element={<ReaderXLPage />} />
+        <Route path="/audio" element={<AudioV2Page />} />
         <Route path="/rankings" element={<RankingsPage />} />
+        <Route path="/leaderboards" element={<LeaderboardsPage />} />
         <Route path="/booklists" element={<BooklistsPage />} />
         <Route path="/booklists/:id" element={<BooklistDetailPage />} />
         <Route path="/profile" element={<ProfilePage />} />
         <Route path="/feed" element={<FeedPage />} />
+        <Route path="/social" element={<SocialPage />} />
         <Route path="/search" element={<SearchPage />} />
         <Route path="/recommendations" element={<RecommendationsPage />} />
+        <Route path="/dashboard" element={<DashboardPage />} />
         <Route path="/admin" element={<AdminDashboardPage />} />
         <Route path="/analytics" element={<AnalyticsPage />} />
         <Route path="/dao" element={<DaoPage />} />
@@ -48,6 +65,11 @@ function App() {
         <Route path="/blog/:subdomain" element={<BlogPage />} />
         <Route path="/blog-settings" element={<BlogSettingsPage />} />
         <Route path="/collaborate/:docId" element={<CollaboratePage />} />
+        <Route path="/wiki" element={<WikiPage />} />
+        <Route path="/wiki/entity" element={<WikiEntityPage />} />
+        <Route path="/wiki/timeline" element={<WikiTimelinePage />} />
+        <Route path="/publish" element={<PublishGatePage />} />
+        <Route path="/onboarding" element={<OnboardingPage />} />
       </Routes>
     </div>
   )

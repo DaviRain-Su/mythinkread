@@ -5,6 +5,10 @@ import { Icon } from './mtr/primitives'
 
 const NAV_ITEMS: Array<[string, string, string, string]> = [
   ['/books', 'discover', 'Discover', '发现'],
+  ['/studio', 'studio', 'Studio', '工作室'],
+  ['/social', 'social', 'Club', '书友圈'],
+  ['/wiki', 'wiki', 'Wiki', '知识宇宙'],
+  ['/dashboard', 'data', 'Data', '数据'],
   ['/rankings', 'ranks', 'Ranks', '榜单'],
   ['/booklists', 'lists', 'Lists', '书单'],
   ['/feed', 'feed', 'Feed', '动态'],
