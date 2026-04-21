@@ -473,3 +473,128 @@ CREATE TABLE IF NOT EXISTS fsrs_reviews (
 CREATE INDEX IF NOT EXISTS idx_memory_cards_user_next ON memory_cards(user_id, fsrs_next_review);
 CREATE INDEX IF NOT EXISTS idx_memory_cards_source ON memory_cards(source_type, source_id);
 CREATE INDEX IF NOT EXISTS idx_fsrs_reviews_card ON fsrs_reviews(card_id, reviewed_at);
+
+-- Wiki entries table (for AI-generated book knowledge base)
+CREATE TABLE IF NOT EXISTS wiki_entries (
+    id TEXT PRIMARY KEY,
+    book_id TEXT NOT NULL,
+    slug TEXT NOT NULL,
+    title TEXT NOT NULL,
+    title_zh TEXT,
+    category TEXT NOT NULL CHECK (category IN ('concept', 'entity', 'theme', 'timeline', 'analysis')),
+    content TEXT NOT NULL,
+    summary TEXT,
+    ai_generated INTEGER DEFAULT 1,
+    created_by TEXT,
+    version INTEGER DEFAULT 1,
+    arweave_tx TEXT,
+    ipfs_cid TEXT,
+    status TEXT DEFAULT 'active' CHECK (status IN ('active', 'archived', 'draft')),
+    created_at INTEGER NOT NULL,
+    updated_at INTEGER NOT NULL,
+    FOREIGN KEY (book_id) REFERENCES books(id) ON DELETE CASCADE,
+    FOREIGN KEY (created_by) REFERENCES users(id) ON DELETE SET NULL,
+    UNIQUE(book_id, slug)
+);
+
+-- Wiki relations table (knowledge graph edges)
+CREATE TABLE IF NOT EXISTS wiki_relations (
+    id TEXT PRIMARY KEY,
+    book_id TEXT NOT NULL,
+    from_entry_id TEXT NOT NULL,
+    to_entry_id TEXT NOT NULL,
+    relation_type TEXT NOT NULL CHECK (relation_type IN ('references', 'contradicts', 'explains', 'appears_in', 'related_to')),
+    context TEXT,
+    created_at INTEGER NOT NULL,
+    FOREIGN KEY (book_id) REFERENCES books(id) ON DELETE CASCADE,
+    FOREIGN KEY (from_entry_id) REFERENCES wiki_entries(id) ON DELETE CASCADE,
+    FOREIGN KEY (to_entry_id) REFERENCES wiki_entries(id) ON DELETE CASCADE,
+    UNIQUE(book_id, from_entry_id, to_entry_id, relation_type)
+);
+
+-- Wiki appearances table (where concepts appear in chapters)
+CREATE TABLE IF NOT EXISTS wiki_appearances (
+    id TEXT PRIMARY KEY,
+    entry_id TEXT NOT NULL,
+    chapter_id TEXT NOT NULL,
+    paragraph_idx INTEGER,
+    quote TEXT,
+    created_at INTEGER NOT NULL,
+    FOREIGN KEY (entry_id) REFERENCES wiki_entries(id) ON DELETE CASCADE,
+    FOREIGN KEY (chapter_id) REFERENCES chapters(id) ON DELETE CASCADE,
+    UNIQUE(entry_id, chapter_id, paragraph_idx)
+);
+
+-- Wiki revisions table (edit history)
+CREATE TABLE IF NOT EXISTS wiki_revisions (
+    id TEXT PRIMARY KEY,
+    entry_id TEXT NOT NULL,
+    user_id TEXT,
+    content TEXT NOT NULL,
+    summary TEXT,
+    version INTEGER NOT NULL,
+    created_at INTEGER NOT NULL,
+    FOREIGN KEY (entry_id) REFERENCES wiki_entries(id) ON DELETE CASCADE,
+    FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE SET NULL
+);
+
+-- Wiki indexes
+CREATE INDEX IF NOT EXISTS idx_wiki_entries_book ON wiki_entries(book_id, category);
+CREATE INDEX IF NOT EXISTS idx_wiki_entries_slug ON wiki_entries(book_id, slug);
+CREATE INDEX IF NOT EXISTS idx_wiki_relations_book ON wiki_relations(book_id);
+CREATE INDEX IF NOT EXISTS idx_wiki_relations_from ON wiki_relations(from_entry_id);
+CREATE INDEX IF NOT EXISTS idx_wiki_appearances_entry ON wiki_appearances(entry_id);
+CREATE INDEX IF NOT EXISTS idx_wiki_revisions_entry ON wiki_revisions(entry_id, version);
+
+-- Voice rooms table (for live audio discussions)
+CREATE TABLE IF NOT EXISTS voice_rooms (
+    id TEXT PRIMARY KEY,
+    book_id TEXT NOT NULL,
+    chapter_id TEXT,
+    title TEXT NOT NULL,
+    description TEXT,
+    host_id TEXT NOT NULL,
+    status TEXT DEFAULT 'scheduled' CHECK (status IN ('scheduled', 'live', 'ended', 'cancelled')),
+    scheduled_at INTEGER,
+    started_at INTEGER,
+    ended_at INTEGER,
+    max_speakers INTEGER DEFAULT 5,
+    max_listeners INTEGER DEFAULT 200,
+    recording_cid TEXT,
+    created_at INTEGER NOT NULL,
+    updated_at INTEGER NOT NULL,
+    FOREIGN KEY (book_id) REFERENCES books(id) ON DELETE CASCADE,
+    FOREIGN KEY (host_id) REFERENCES users(id) ON DELETE CASCADE
+);
+
+-- Voice room participants table
+CREATE TABLE IF NOT EXISTS voice_room_participants (
+    id TEXT PRIMARY KEY,
+    room_id TEXT NOT NULL,
+    user_id TEXT NOT NULL,
+    role TEXT DEFAULT 'listener' CHECK (role IN ('host', 'co_host', 'speaker', 'listener')),
+    is_speaking INTEGER DEFAULT 0,
+    joined_at INTEGER NOT NULL,
+    left_at INTEGER,
+    FOREIGN KEY (room_id) REFERENCES voice_rooms(id) ON DELETE CASCADE,
+    FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE,
+    UNIQUE(room_id, user_id)
+);
+
+-- Voice room chat messages table
+CREATE TABLE IF NOT EXISTS voice_room_messages (
+    id TEXT PRIMARY KEY,
+    room_id TEXT NOT NULL,
+    user_id TEXT NOT NULL,
+    content TEXT NOT NULL,
+    message_type TEXT DEFAULT 'text' CHECK (message_type IN ('text', 'reaction', 'highlight', 'system')),
+    created_at INTEGER NOT NULL,
+    FOREIGN KEY (room_id) REFERENCES voice_rooms(id) ON DELETE CASCADE,
+    FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
+);
+
+-- Voice room indexes
+CREATE INDEX IF NOT EXISTS idx_voice_rooms_book ON voice_rooms(book_id, status);
+CREATE INDEX IF NOT EXISTS idx_voice_rooms_status ON voice_rooms(status, scheduled_at);
+CREATE INDEX IF NOT EXISTS idx_voice_room_participants_room ON voice_room_participants(room_id, role);
+CREATE INDEX IF NOT EXISTS idx_voice_room_messages_room ON voice_room_messages(room_id, created_at);
