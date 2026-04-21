@@ -1,0 +1,27 @@
+name = "mythinkread-api"
+main = "src/index.ts"
+compatibility_date = "2025-04-21"
+
+[vars]
+ENVIRONMENT = "development"
+
+[[d1_databases]]
+binding = "DB"
+database_name = "mythinkread-db"
+database_id = "b656c409-100e-4111-9038-43ff874df80f"
+
+[[kv_namespaces]]
+binding = "KV"
+id = "local"
+
+[[r2_buckets]]
+binding = "R2"
+bucket_name = "mythinkread-assets"
+
+[[queues.producers]]
+binding = "QUEUE"
+queue = "book-processing"
+
+[ai]
+binding = "AI"
+remote = true
