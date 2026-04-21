@@ -31,6 +31,12 @@ import AudioV2Page from './pages/audio/AudioV2Page'
 import PublishGatePage from './pages/publish/PublishGatePage'
 import LeaderboardsPage from './pages/leaderboards/LeaderboardsPage'
 import OnboardingPage from './pages/onboarding/OnboardingPage'
+import MobileReaderPage from './pages/mobile/MobileReaderPage'
+import MobileDiscoveryPage from './pages/mobile/MobileDiscoveryPage'
+import HighlightCardPage from './pages/mobile/HighlightCardPage'
+import VoiceRoomPage from './pages/voice/VoiceRoomPage'
+import ObsidianExportPage from './pages/export/ObsidianExportPage'
+import WikiCoEditPage from './pages/wiki/WikiCoEditPage'
 import Navbar from './components/Navbar'
 
 function App() {
@@ -68,8 +74,14 @@ function App() {
         <Route path="/wiki" element={<WikiPage />} />
         <Route path="/wiki/entity" element={<WikiEntityPage />} />
         <Route path="/wiki/timeline" element={<WikiTimelinePage />} />
+        <Route path="/wiki/coedit" element={<WikiCoEditPage />} />
         <Route path="/publish" element={<PublishGatePage />} />
         <Route path="/onboarding" element={<OnboardingPage />} />
+        <Route path="/mobile/reader" element={<MobileReaderPage />} />
+        <Route path="/mobile/discovery" element={<MobileDiscoveryPage />} />
+        <Route path="/mobile/highlight" element={<HighlightCardPage />} />
+        <Route path="/voice" element={<VoiceRoomPage />} />
+        <Route path="/export" element={<ObsidianExportPage />} />
       </Routes>
     </div>
   )

@@ -1,4 +1,5 @@
 import { useAuthStore } from '../stores/authStore'
+import { useLangStore } from '../stores/langStore'
 import { useNavigate, useLocation } from 'react-router-dom'
 import NotificationBell from './NotificationBell'
 import { Icon } from './mtr/primitives'
@@ -21,6 +22,7 @@ export default function Navbar() {
   const navigate = useNavigate()
   const location = useLocation()
   const { user, isAuthenticated, logout } = useAuthStore()
+  const { lang, toggle } = useLangStore()
 
   const isActive = (path: string) =>
     location.pathname === path || (path !== '/' && location.pathname.startsWith(path))
@@ -144,6 +146,44 @@ export default function Navbar() {
             ⌘K
           </span>
         </button>
+
+        {/* Language toggle */}
+        <div
+          style={{
+            display: 'flex',
+            background: 'var(--paper)',
+            border: '1px solid var(--ink)',
+            borderRadius: 2,
+            fontFamily: 'var(--font-mono)',
+            fontSize: 11,
+            letterSpacing: '0.1em',
+            overflow: 'hidden',
+            boxShadow: '0 2px 8px rgba(0,0,0,0.08)',
+          }}
+        >
+          {[
+            ['en', 'EN'],
+            ['zh', '中文'],
+          ].map(([k, lbl]) => (
+            <div
+              key={k}
+              onClick={() => toggle()}
+              style={{
+                padding: '6px 12px',
+                cursor: 'pointer',
+                background: lang === k ? 'var(--ink)' : 'transparent',
+                color: lang === k ? 'var(--paper)' : 'var(--ink-2)',
+                fontWeight: lang === k ? 600 : 400,
+                fontFamily:
+                  k === 'zh'
+                    ? "var(--font-cjk, 'Noto Serif SC', serif)"
+                    : 'inherit',
+              }}
+            >
+              {lbl}
+            </div>
+          ))}
+        </div>
 
         {/* Right cluster */}
         {isAuthenticated ? (
