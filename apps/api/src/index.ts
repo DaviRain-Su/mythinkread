@@ -24,6 +24,7 @@ import publicDomainRoutes from './routes/public-domain'
 import blogRoutes from './routes/blog'
 import collaborateRoutes from './routes/collaborate'
 import ttsRoutes from './routes/tts'
+import fsrsRoutes from './routes/fsrs'
 
 export interface Env {
   DB: D1Database
@@ -68,5 +69,6 @@ app.route('/api/public-domain', publicDomainRoutes)
 app.route('/api/blog', blogRoutes)
 app.route('/api/collaborate', collaborateRoutes)
 app.route('/api/tts', ttsRoutes)
+app.route('/api/fsrs', fsrsRoutes)
 
 export default app

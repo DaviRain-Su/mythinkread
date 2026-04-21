@@ -36,6 +36,7 @@ import HighlightCardPage from './pages/mobile/HighlightCardPage'
 import VoiceRoomPage from './pages/voice/VoiceRoomPage'
 import ObsidianExportPage from './pages/export/ObsidianExportPage'
 import WikiCoEditPage from './pages/wiki/WikiCoEditPage'
+import FSRSReviewPage from './pages/fsrs/FSRSReviewPage'
 import Navbar from './components/Navbar'
 
 function App() {
@@ -80,6 +81,7 @@ function App() {
         <Route path="/mobile/highlight" element={<HighlightCardPage />} />
         <Route path="/voice" element={<VoiceRoomPage />} />
         <Route path="/export" element={<ObsidianExportPage />} />
+        <Route path="/fsrs" element={<FSRSReviewPage />} />
       </Routes>
     </div>
   )

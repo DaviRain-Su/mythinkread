@@ -1,5 +1,6 @@
 import { useState } from 'react'
 import { Icon, formatCID } from '../../components/mtr/primitives'
+import { useLangStore } from '../../stores/langStore'
 
 const WIKI_TREE = [
   ['concepts/', ['Homesickness', 'Seven-word form', 'Coordinates', 'Measurement']],
@@ -48,6 +49,7 @@ const GRAPH_NODES: Array<[number, number, string, string]> = [
 ]
 
 export default function WikiPage() {
+  const { lang } = useLangStore()
   const [activeToc, setActiveToc] = useState(0)
   const [selectedDir, setSelectedDir] = useState('concepts/')
   const [selectedItem, setSelectedItem] = useState('Homesickness')
@@ -91,7 +93,32 @@ export default function WikiPage() {
           ))}
 
           <button className="btn ghost" style={{ width: '100%', marginTop: 12, fontSize: 11 }}>
-            <Icon name="download" size={10} /> &nbsp;Export to Obsidian
+            <Icon name="download" size={10} /> &nbsp;{lang === 'zh' ? '导出到 Obsidian' : 'Export to Obsidian'}
+          </button>
+          <button
+            className="btn accent"
+            style={{ width: '100%', marginTop: 8, fontSize: 11 }}
+            onClick={() => {
+              const token = localStorage.getItem('mtr_token')
+              fetch('/api/fsrs/cards', {
+                method: 'POST',
+                headers: {
+                  'Content-Type': 'application/json',
+                  Authorization: `Bearer ${token}`,
+                },
+                body: JSON.stringify({
+                  source_type: 'wiki',
+                  source_id: `${selectedDir}${selectedItem}`,
+                  front: selectedItem,
+                  back: `Wiki concept from ${selectedDir}`,
+                  context: `${selectedDir}${selectedItem}`,
+                }),
+              })
+                .then(() => alert(lang === 'zh' ? '已添加到记忆卡片！' : 'Added to memory cards!'))
+                .catch(console.error)
+            }}
+          >
+            <Icon name="sparkle" size={10} /> &nbsp;{lang === 'zh' ? '加入记忆卡片' : 'Add to SRS'}
           </button>
         </aside>
 

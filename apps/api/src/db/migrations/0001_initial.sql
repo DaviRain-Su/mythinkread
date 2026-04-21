@@ -421,3 +421,55 @@ CREATE INDEX IF NOT EXISTS idx_user_blog_configs_subdomain ON user_blog_configs(
 CREATE INDEX IF NOT EXISTS idx_collaborative_docs_book ON collaborative_docs(book_id);
 CREATE INDEX IF NOT EXISTS idx_doc_operations_doc ON doc_operations(doc_id, version);
 CREATE INDEX IF NOT EXISTS idx_tts_audio_cache ON tts_audio_cache(book_id, chapter_id, voice_id);
+
+-- FSRS Memory Cards table (for spaced repetition)
+CREATE TABLE IF NOT EXISTS memory_cards (
+    id TEXT PRIMARY KEY,
+    user_id TEXT NOT NULL,
+    source_type TEXT NOT NULL CHECK (source_type IN ('wiki', 'annotation', 'concept', 'quote')),
+    source_id TEXT NOT NULL,
+    book_id TEXT,
+    chapter_id TEXT,
+    front TEXT NOT NULL,
+    back TEXT,
+    context TEXT,
+    fsrs_d REAL DEFAULT 5.0 CHECK (fsrs_d >= 1 AND fsrs_d <= 10),
+    fsrs_s REAL DEFAULT 0.0 CHECK (fsrs_s >= 0),
+    fsrs_r REAL DEFAULT 1.0 CHECK (fsrs_r >= 0 AND fsrs_r <= 1),
+    fsrs_last_review INTEGER,
+    fsrs_next_review INTEGER,
+    fsrs_reps INTEGER DEFAULT 0,
+    fsrs_lapses INTEGER DEFAULT 0,
+    fsrs_state INTEGER DEFAULT 0 CHECK (fsrs_state IN (0, 1, 2, 3)),
+    fsrs_w TEXT,
+    created_at INTEGER NOT NULL,
+    updated_at INTEGER NOT NULL,
+    FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE,
+    FOREIGN KEY (book_id) REFERENCES books(id) ON DELETE SET NULL,
+    FOREIGN KEY (chapter_id) REFERENCES chapters(id) ON DELETE SET NULL
+);
+
+-- FSRS Review Log table
+CREATE TABLE IF NOT EXISTS fsrs_reviews (
+    id TEXT PRIMARY KEY,
+    card_id TEXT NOT NULL,
+    user_id TEXT NOT NULL,
+    grade INTEGER NOT NULL CHECK (grade >= 1 AND grade <= 4),
+    elapsed_days REAL NOT NULL,
+    scheduled_days REAL NOT NULL,
+    review_duration INTEGER,
+    fsrs_d_before REAL NOT NULL,
+    fsrs_s_before REAL NOT NULL,
+    fsrs_r_before REAL NOT NULL,
+    fsrs_d_after REAL NOT NULL,
+    fsrs_s_after REAL NOT NULL,
+    fsrs_r_after REAL NOT NULL,
+    reviewed_at INTEGER NOT NULL,
+    FOREIGN KEY (card_id) REFERENCES memory_cards(id) ON DELETE CASCADE,
+    FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
+);
+
+-- Create indexes for FSRS
+CREATE INDEX IF NOT EXISTS idx_memory_cards_user_next ON memory_cards(user_id, fsrs_next_review);
+CREATE INDEX IF NOT EXISTS idx_memory_cards_source ON memory_cards(source_type, source_id);
+CREATE INDEX IF NOT EXISTS idx_fsrs_reviews_card ON fsrs_reviews(card_id, reviewed_at);
