@@ -1,11 +1,12 @@
-import { useState, useEffect, useRef, useCallback } from 'react'
-import { useParams, useNavigate } from 'react-router-dom'
+import { useCallback, useEffect, useRef, useState } from 'react'
+import { useNavigate, useParams } from 'react-router-dom'
+import { Icon } from '../components/mtr/primitives'
 
 interface Chapter {
   id: string
   idx: number
   title: string
-  word_count: number
+  word_count?: number
 }
 
 interface Book {
@@ -27,8 +28,16 @@ interface Annotation {
   color: string
 }
 
+type FontKey = 'serif' | 'sans' | 'mono'
+
+const FONT_FAMILY: Record<FontKey, string> = {
+  serif: 'var(--font-body)',
+  sans: 'var(--font-sans)',
+  mono: 'var(--font-mono)',
+}
+
 export default function BookReaderPage() {
-  const { bookId, chapterId } = useParams<{ bookId: string; chapterId: string }>()
+  const { bookId } = useParams<{ bookId: string; chapterId: string }>()
   const navigate = useNavigate()
   const contentRef = useRef<HTMLDivElement>(null)
   const [book, setBook] = useState<Book | null>(null)
@@ -41,10 +50,12 @@ export default function BookReaderPage() {
   const [selectionRange, setSelectionRange] = useState<{ start: number; end: number } | null>(null)
   const [showAnnotationPanel, setShowAnnotationPanel] = useState(false)
   const [annotationNote, setAnnotationNote] = useState('')
-  const [showAnnotations, setShowAnnotations] = useState(true)
+  const [fontKey, setFontKey] = useState<FontKey>('serif')
+  const [density, setDensity] = useState<'compact' | 'comfortable' | 'spacious'>('comfortable')
 
   useEffect(() => {
-    loadBook()
+    void loadBook()
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [bookId])
 
   const loadBook = async () => {
@@ -52,13 +63,13 @@ export default function BookReaderPage() {
     try {
       const token = localStorage.getItem('mtr_token')
       const res = await fetch(`/api/books/${bookId}`, {
-        headers: { Authorization: `Bearer ${token}` }
+        headers: { Authorization: `Bearer ${token}` },
       })
       if (!res.ok) throw new Error('Failed to load book')
-      const data = await res.json()
+      const data = (await res.json()) as Book
       setBook(data)
       if (data.chapters?.length > 0) {
-        loadChapter(data.chapters[0])
+        void loadChapter(data.chapters[0])
       }
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Failed to load book')
@@ -74,12 +85,12 @@ export default function BookReaderPage() {
     try {
       const token = localStorage.getItem('mtr_token')
       const res = await fetch(`/api/books/${bookId}/read/${chapter.id}`, {
-        headers: { Authorization: `Bearer ${token}` }
+        headers: { Authorization: `Bearer ${token}` },
       })
       if (!res.ok) throw new Error('Failed to load chapter')
       const data = await res.json()
       setChapterContent(data.chapter?.content || '')
-      loadAnnotations(chapter.id)
+      void loadAnnotations(chapter.id)
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Failed to load chapter')
     }
@@ -105,16 +116,11 @@ export default function BookReaderPage() {
       setShowAnnotationPanel(false)
       return
     }
-
     const text = selection.toString().trim()
     if (text.length < 2) return
-
     const range = selection.getRangeAt(0)
-    const startOffset = range.startOffset
-    const endOffset = range.endOffset
-
     setSelectedText(text)
-    setSelectionRange({ start: startOffset, end: endOffset })
+    setSelectionRange({ start: range.startOffset, end: range.endOffset })
     setShowAnnotationPanel(true)
   }, [])
 
@@ -126,7 +132,7 @@ export default function BookReaderPage() {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
-          Authorization: `Bearer ${token}`
+          Authorization: `Bearer ${token}`,
         },
         body: JSON.stringify({
           book_id: bookId,
@@ -134,8 +140,8 @@ export default function BookReaderPage() {
           range_start: selectionRange.start,
           range_end: selectionRange.end,
           selected_text: selectedText,
-          note: annotationNote
-        })
+          note: annotationNote,
+        }),
       })
       if (!res.ok) throw new Error('Failed to create annotation')
       setAnnotationNote('')
@@ -143,263 +149,525 @@ export default function BookReaderPage() {
       setSelectedText('')
       setSelectionRange(null)
       window.getSelection()?.removeAllRanges()
-      loadAnnotations(currentChapter.id)
+      void loadAnnotations(currentChapter.id)
     } catch (err) {
       alert(err instanceof Error ? err.message : 'Failed to create annotation')
     }
   }
 
-  const renderAnnotatedContent = () => {
-    if (!showAnnotations || annotations.length === 0) {
-      return chapterContent
-    }
-    // Simple annotation rendering - in production would use spans with ranges
-    return chapterContent
-  }
-
   if (loading) {
     return (
-      <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', minHeight: '100vh' }}>
-        <p>Loading...</p>
+      <div style={centerStyle}>
+        <div className="eyebrow">Loading…</div>
       </div>
     )
   }
 
   if (error || !book) {
     return (
-      <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', minHeight: '100vh' }}>
-        <div style={{ textAlign: 'center' }}>
-          <p style={{ color: '#ef4444' }}>{error || 'Book not found'}</p>
-          <button onClick={() => navigate('/')} style={{ marginTop: '1rem', padding: '0.5rem 1rem' }}>
-            Back to Home
-          </button>
+      <div style={centerStyle}>
+        <div className="display" style={{ fontSize: 24 }}>
+          {error || 'Book not found'}
         </div>
+        <button className="btn ghost" style={{ marginTop: 20 }} onClick={() => navigate('/')}>
+          Back to home
+        </button>
       </div>
     )
   }
 
+  const totalPages = book.chapters.length
+  const currentPage = (currentChapter?.idx ?? 0) + 1
+  const densityStyle =
+    density === 'compact'
+      ? { fontSize: 17, lineHeight: 1.55 }
+      : density === 'spacious'
+      ? { fontSize: 21, lineHeight: 2.0 }
+      : { fontSize: 19, lineHeight: 1.75 }
+
   return (
-    <div style={{ display: 'flex', minHeight: '100vh', backgroundColor: '#f9fafb' }}>
-      {/* Sidebar - Chapter List */}
-      <div style={{
-        width: '280px',
-        backgroundColor: 'white',
-        borderRight: '1px solid #e5e7eb',
-        overflowY: 'auto',
-        position: 'fixed',
-        top: 0,
-        left: 0,
-        bottom: 0,
-        zIndex: 10,
-        paddingTop: '3.5rem'
-      }}>
-        <div style={{ padding: '1rem', borderBottom: '1px solid #e5e7eb' }}>
-          <h2 style={{ fontSize: '1.125rem', fontWeight: 'bold', marginBottom: '0.25rem' }}>{book.title}</h2>
-          <p style={{ fontSize: '0.875rem', color: '#6b7280' }}>{book.author}</p>
+    <div
+      style={{
+        background: 'var(--paper-2)',
+        color: 'var(--ink)',
+        minHeight: '100vh',
+        display: 'flex',
+        flexDirection: 'column',
+      }}
+    >
+      {/* Chrome */}
+      <div
+        style={{
+          display: 'flex',
+          alignItems: 'center',
+          padding: '14px 28px',
+          background: 'var(--paper)',
+          borderBottom: '1px solid var(--rule)',
+          gap: 14,
+        }}
+      >
+        <button
+          onClick={() => navigate(`/books/${book.id}`)}
+          style={{
+            background: 'none',
+            border: 'none',
+            cursor: 'pointer',
+            color: 'var(--ink-3)',
+            padding: 4,
+          }}
+        >
+          <Icon name="left" size={14} />
+        </button>
+        <div style={{ display: 'flex', flexDirection: 'column', minWidth: 0 }}>
+          <div className="display" style={{ fontSize: 15, fontWeight: 500 }}>
+            {book.title}
+          </div>
+          <div
+            className="mono"
+            style={{
+              fontSize: 9,
+              color: 'var(--ink-3)',
+              letterSpacing: '.1em',
+              textTransform: 'uppercase',
+            }}
+          >
+            {currentChapter
+              ? `Ch. ${String((currentChapter.idx ?? 0) + 1).padStart(2, '0')} · ${currentChapter.title}`
+              : 'Select a chapter'}
+          </div>
         </div>
-        <div style={{ padding: '0.5rem 0' }}>
-          {book.chapters.map((chapter) => (
+        <div style={{ flex: 1 }} />
+        <div style={{ display: 'flex', gap: 16, alignItems: 'center' }}>
+          <div className="mono" style={{ fontSize: 10, color: 'var(--ink-3)' }}>
+            {currentPage} / {totalPages} · {Math.round((currentPage / totalPages) * 100)}%
+          </div>
+          <div style={{ width: 1, height: 20, background: 'var(--rule)' }} />
+          {(['serif', 'sans', 'mono'] as FontKey[]).map((k) => (
             <button
-              key={chapter.id}
-              onClick={() => loadChapter(chapter)}
+              key={k}
+              onClick={() => setFontKey(k)}
               style={{
-                width: '100%',
-                padding: '0.75rem 1rem',
-                textAlign: 'left',
+                background: 'none',
                 border: 'none',
-                backgroundColor: currentChapter?.id === chapter.id ? '#eff6ff' : 'transparent',
-                color: currentChapter?.id === chapter.id ? '#2563eb' : '#374151',
                 cursor: 'pointer',
-                fontSize: '0.875rem'
+                fontSize: 13,
+                fontFamily: FONT_FAMILY[k],
+                color: fontKey === k ? 'var(--ink)' : 'var(--ink-4)',
+                fontWeight: fontKey === k ? 500 : 400,
+                borderBottom: fontKey === k ? '1px solid var(--ink)' : 'none',
+                paddingBottom: 1,
               }}
             >
-              {chapter.title}
+              Aa
+            </button>
+          ))}
+          <div style={{ width: 1, height: 20, background: 'var(--rule)' }} />
+          {(['compact', 'comfortable', 'spacious'] as const).map((d) => (
+            <button
+              key={d}
+              onClick={() => setDensity(d)}
+              className="chip"
+              style={{
+                background: density === d ? 'var(--ink)' : 'var(--paper)',
+                color: density === d ? 'var(--paper)' : 'var(--ink-2)',
+                border: '1px solid var(--rule)',
+                cursor: 'pointer',
+              }}
+            >
+              {d === 'compact' ? 'Tight' : d === 'spacious' ? 'Roomy' : 'Medium'}
             </button>
           ))}
         </div>
       </div>
 
-      {/* Main Content */}
-      <div style={{ marginLeft: '280px', flex: 1, padding: '2rem', maxWidth: '800px' }}>
-        {currentChapter ? (
+      {/* Reading area */}
+      <div
+        style={{
+          flex: 1,
+          display: 'grid',
+          gridTemplateColumns: '220px minmax(0, 1fr) 280px',
+          overflow: 'hidden',
+        }}
+      >
+        {/* Chapters */}
+        <aside
+          className="mtr-scroll"
+          style={{
+            padding: '28px 18px',
+            borderRight: '1px solid var(--rule)',
+            background: 'var(--paper)',
+            overflow: 'auto',
+          }}
+        >
+          <div className="eyebrow">Chapters</div>
+          <div
+            style={{
+              marginTop: 14,
+              display: 'flex',
+              flexDirection: 'column',
+              gap: 2,
+            }}
+          >
+            {book.chapters.map((ch, i) => {
+              const active = currentChapter?.id === ch.id
+              return (
+                <button
+                  key={ch.id}
+                  onClick={() => loadChapter(ch)}
+                  style={{
+                    padding: '10px 12px',
+                    fontSize: 12,
+                    borderLeft: active ? '2px solid var(--accent)' : '2px solid transparent',
+                    background: active ? 'var(--paper-2)' : 'transparent',
+                    color: active ? 'var(--ink)' : 'var(--ink-3)',
+                    cursor: 'pointer',
+                    textAlign: 'left',
+                    border: 'none',
+                    borderLeftWidth: 2,
+                    borderLeftStyle: 'solid',
+                    borderLeftColor: active ? 'var(--accent)' : 'transparent',
+                    fontFamily: 'inherit',
+                  }}
+                >
+                  <div
+                    className="mono"
+                    style={{
+                      fontSize: 9,
+                      color: 'var(--ink-4)',
+                      letterSpacing: '.1em',
+                    }}
+                  >
+                    CH {String(i + 1).padStart(2, '0')}
+                  </div>
+                  <div
+                    className="display"
+                    style={{
+                      fontSize: 12.5,
+                      marginTop: 2,
+                      fontWeight: active ? 500 : 400,
+                    }}
+                  >
+                    {ch.title}
+                  </div>
+                </button>
+              )
+            })}
+          </div>
+        </aside>
+
+        {/* Body */}
+        <main
+          className="mtr-scroll"
+          style={{
+            display: 'flex',
+            justifyContent: 'center',
+            padding: '48px 20px 80px',
+            overflow: 'auto',
+          }}
+        >
+          <div style={{ width: 620, maxWidth: '100%' }}>
+            {currentChapter ? (
+              <>
+                <div className="eyebrow" style={{ textAlign: 'center', marginBottom: 8 }}>
+                  Chapter {String((currentChapter.idx ?? 0) + 1).padStart(2, '0')}
+                </div>
+                <h1
+                  className="display"
+                  style={{
+                    textAlign: 'center',
+                    fontSize: 38,
+                    fontWeight: 400,
+                    letterSpacing: '-0.02em',
+                    marginBottom: 24,
+                    lineHeight: 1.1,
+                  }}
+                >
+                  {currentChapter.title}
+                </h1>
+                <div
+                  ref={contentRef}
+                  onMouseUp={handleTextSelection}
+                  className="reader-body body-serif"
+                  style={{
+                    fontFamily: FONT_FAMILY[fontKey],
+                    ...densityStyle,
+                    color: 'var(--ink)',
+                    textAlign: 'justify',
+                    textWrap: 'pretty',
+                    hyphens: 'auto',
+                    whiteSpace: 'pre-wrap',
+                    userSelect: 'text',
+                    cursor: 'text',
+                  }}
+                >
+                  {chapterContent || (
+                    <div className="eyebrow" style={{ textAlign: 'center', padding: '40px 0' }}>
+                      Loading chapter…
+                    </div>
+                  )}
+                </div>
+
+                {annotations.length > 0 && (
+                  <>
+                    <div className="ornament" style={{ marginTop: 40 }}>
+                      ◆ ◆ ◆
+                    </div>
+                    <div
+                      className="eyebrow"
+                      style={{ marginTop: 12, textAlign: 'center' }}
+                    >
+                      {annotations.length} notes in the margin
+                    </div>
+                  </>
+                )}
+
+                {/* Chapter nav */}
+                <div
+                  style={{
+                    display: 'flex',
+                    justifyContent: 'space-between',
+                    marginTop: 60,
+                    paddingTop: 24,
+                    borderTop: '1px solid var(--rule)',
+                  }}
+                >
+                  <button
+                    className="btn ghost"
+                    disabled={(currentChapter.idx ?? 0) <= 0}
+                    onClick={() => {
+                      const prev = book.chapters.find(
+                        (c) => c.idx === (currentChapter.idx ?? 0) - 1,
+                      )
+                      if (prev) void loadChapter(prev)
+                    }}
+                  >
+                    <Icon name="left" size={12} /> Previous
+                  </button>
+                  <button
+                    className="btn accent"
+                    disabled={(currentChapter.idx ?? 0) >= book.chapters.length - 1}
+                    onClick={() => {
+                      const next = book.chapters.find(
+                        (c) => c.idx === (currentChapter.idx ?? 0) + 1,
+                      )
+                      if (next) void loadChapter(next)
+                    }}
+                  >
+                    Next <Icon name="right" size={12} />
+                  </button>
+                </div>
+              </>
+            ) : (
+              <div className="eyebrow" style={{ textAlign: 'center', padding: '60px 0' }}>
+                Select a chapter to start reading
+              </div>
+            )}
+          </div>
+        </main>
+
+        {/* Aside: notes */}
+        <aside
+          className="mtr-scroll"
+          style={{
+            padding: '28px 20px',
+            borderLeft: '1px solid var(--rule)',
+            background: 'var(--paper)',
+            display: 'flex',
+            flexDirection: 'column',
+            gap: 18,
+            overflow: 'auto',
+          }}
+        >
           <div>
-            <h1 style={{ fontSize: '1.5rem', fontWeight: 'bold', marginBottom: '1.5rem' }}>
-              {currentChapter.title}
-            </h1>
             <div
-              ref={contentRef}
-              onMouseUp={handleTextSelection}
               style={{
-                lineHeight: '1.8',
-                fontSize: '1.125rem',
-                color: '#374151',
-                whiteSpace: 'pre-wrap',
-                userSelect: 'text',
-                cursor: 'text'
+                display: 'flex',
+                alignItems: 'baseline',
+                justifyContent: 'space-between',
+                marginBottom: 10,
               }}
             >
-              {renderAnnotatedContent() || 'Loading content...'}
-            </div>
-
-            {/* Annotation Panel */}
-            {showAnnotationPanel && (
-              <div style={{
-                position: 'fixed',
-                bottom: '2rem',
-                right: '2rem',
-                width: '320px',
-                backgroundColor: 'white',
-                borderRadius: '0.75rem',
-                boxShadow: '0 10px 25px -5px rgba(0,0,0,0.1)',
-                padding: '1rem',
-                zIndex: 50,
-                border: '1px solid #e5e7eb'
-              }}>
-                <h3 style={{ fontSize: '0.875rem', fontWeight: 600, marginBottom: '0.5rem' }}>
-                  添加批注
-                </h3>
-                <p style={{
-                  fontSize: '0.75rem',
-                  color: '#6b7280',
-                  marginBottom: '0.75rem',
-                  backgroundColor: '#fef3c7',
-                  padding: '0.5rem',
-                  borderRadius: '0.25rem'
-                }}>
-                  已选: "{selectedText.slice(0, 50)}{selectedText.length > 50 ? '...' : ''}"
-                </p>
-                <textarea
-                  value={annotationNote}
-                  onChange={(e) => setAnnotationNote(e.target.value)}
-                  placeholder="写下你的批注..."
-                  rows={3}
-                  style={{
-                    width: '100%',
-                    padding: '0.5rem',
-                    border: '1px solid #e5e7eb',
-                    borderRadius: '0.25rem',
-                    fontSize: '0.875rem',
-                    resize: 'vertical'
-                  }}
-                />
-                <div style={{ display: 'flex', gap: '0.5rem', marginTop: '0.75rem' }}>
-                  <button
-                    onClick={handleCreateAnnotation}
-                    style={{
-                      flex: 1,
-                      padding: '0.5rem',
-                      backgroundColor: '#2563eb',
-                      color: 'white',
-                      border: 'none',
-                      borderRadius: '0.25rem',
-                      cursor: 'pointer',
-                      fontSize: '0.875rem'
-                    }}
-                  >
-                    保存
-                  </button>
-                  <button
-                    onClick={() => {
-                      setShowAnnotationPanel(false)
-                      setSelectedText('')
-                      window.getSelection()?.removeAllRanges()
-                    }}
-                    style={{
-                      flex: 1,
-                      padding: '0.5rem',
-                      backgroundColor: '#f3f4f6',
-                      border: 'none',
-                      borderRadius: '0.25rem',
-                      cursor: 'pointer',
-                      fontSize: '0.875rem'
-                    }}
-                  >
-                    取消
-                  </button>
-                </div>
+              <div className="eyebrow">Highlights</div>
+              <div className="mono" style={{ fontSize: 10, color: 'var(--ink-3)' }}>
+                {annotations.length}
               </div>
-            )}
-
-            {/* Annotation List */}
-            {annotations.length > 0 && (
-              <div style={{ marginTop: '2rem', paddingTop: '2rem', borderTop: '1px solid #e5e7eb' }}>
-                <h3 style={{ fontSize: '1rem', fontWeight: 600, marginBottom: '1rem' }}>
-                  批注 ({annotations.length})
-                </h3>
-                <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
-                  {annotations.map((a) => (
-                    <div key={a.id} style={{
-                      padding: '0.75rem',
-                      backgroundColor: '#fefce8',
-                      borderRadius: '0.5rem',
-                      borderLeft: `3px solid ${a.color || '#FFD700'}`
-                    }}>
-                      <p style={{ fontSize: '0.875rem', color: '#92400e', marginBottom: '0.25rem' }}>
-                        "{a.selected_text.slice(0, 100)}{a.selected_text.length > 100 ? '...' : ''}"
+            </div>
+            {annotations.length === 0 ? (
+              <div
+                style={{
+                  fontSize: 12,
+                  color: 'var(--ink-4)',
+                  fontStyle: 'italic',
+                  lineHeight: 1.6,
+                }}
+              >
+                Select any passage to highlight, note, or ask the book.
+              </div>
+            ) : (
+              <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
+                {annotations.map((a) => (
+                  <div
+                    key={a.id}
+                    style={{
+                      borderLeft: `2px solid ${
+                        a.color || 'oklch(0.82 0.10 85)'
+                      }`,
+                      paddingLeft: 10,
+                    }}
+                  >
+                    <p
+                      className="body-serif"
+                      style={{
+                        margin: 0,
+                        fontSize: 12.5,
+                        lineHeight: 1.5,
+                        color: 'var(--ink-2)',
+                        fontStyle: 'italic',
+                      }}
+                    >
+                      &ldquo;{a.selected_text.slice(0, 100)}
+                      {a.selected_text.length > 100 ? '…' : ''}&rdquo;
+                    </p>
+                    {a.note && (
+                      <p
+                        style={{
+                          margin: '6px 0 0',
+                          fontSize: 12,
+                          lineHeight: 1.5,
+                          color: 'var(--ink-2)',
+                        }}
+                      >
+                        {a.note}
                       </p>
-                      {a.note && (
-                        <p style={{ fontSize: '0.875rem', color: '#374151' }}>{a.note}</p>
-                      )}
-                      <p style={{ fontSize: '0.75rem', color: '#9ca3af', marginTop: '0.25rem' }}>
-                        by {a.username}
-                      </p>
+                    )}
+                    <div
+                      className="mono"
+                      style={{ fontSize: 9, color: 'var(--ink-4)', marginTop: 6 }}
+                    >
+                      {a.username.toUpperCase()}
                     </div>
-                  ))}
-                </div>
+                  </div>
+                ))}
               </div>
             )}
+          </div>
 
-            {/* Navigation */}
-            <div style={{
-              display: 'flex',
-              justifyContent: 'space-between',
-              marginTop: '3rem',
-              paddingTop: '2rem',
-              borderTop: '1px solid #e5e7eb'
-            }}>
-              {currentChapter.idx > 0 && (
+          {showAnnotationPanel && (
+            <div
+              style={{
+                borderTop: '1px solid var(--rule-2)',
+                paddingTop: 16,
+              }}
+            >
+              <div className="eyebrow" style={{ marginBottom: 8 }}>
+                New note
+              </div>
+              <div
+                style={{
+                  background: 'oklch(0.97 0.05 85)',
+                  padding: '12px 14px',
+                  borderRadius: 2,
+                  fontSize: 12.5,
+                  lineHeight: 1.5,
+                  color: 'var(--ink-2)',
+                  fontStyle: 'italic',
+                  marginBottom: 10,
+                }}
+              >
+                &ldquo;{selectedText.slice(0, 140)}
+                {selectedText.length > 140 ? '…' : ''}&rdquo;
+              </div>
+              <textarea
+                value={annotationNote}
+                onChange={(e) => setAnnotationNote(e.target.value)}
+                placeholder="Write a note…"
+                rows={3}
+                className="mtr-input"
+                style={{ fontFamily: 'var(--font-body)' }}
+              />
+              <div style={{ display: 'flex', gap: 8, marginTop: 10 }}>
                 <button
+                  className="btn accent"
+                  style={{ flex: 1, justifyContent: 'center' }}
+                  onClick={handleCreateAnnotation}
+                >
+                  Save
+                </button>
+                <button
+                  className="btn ghost"
+                  style={{ flex: 1, justifyContent: 'center' }}
                   onClick={() => {
-                    const prev = book.chapters.find(c => c.idx === currentChapter.idx - 1)
-                    if (prev) loadChapter(prev)
-                  }}
-                  style={{
-                    padding: '0.5rem 1rem',
-                    border: '1px solid #d1d5db',
-                    borderRadius: '0.5rem',
-                    backgroundColor: 'white',
-                    cursor: 'pointer'
+                    setShowAnnotationPanel(false)
+                    setSelectedText('')
+                    window.getSelection()?.removeAllRanges()
                   }}
                 >
-                  ← Previous
+                  Cancel
                 </button>
-              )}
-              {currentChapter.idx < book.chapters.length - 1 && (
-                <button
-                  onClick={() => {
-                    const next = book.chapters.find(c => c.idx === currentChapter.idx + 1)
-                    if (next) loadChapter(next)
-                  }}
-                  style={{
-                    padding: '0.5rem 1rem',
-                    border: '1px solid #d1d5db',
-                    borderRadius: '0.5rem',
-                    backgroundColor: 'white',
-                    cursor: 'pointer',
-                    marginLeft: 'auto'
-                  }}
-                >
-                  Next →
-                </button>
-              )}
+              </div>
             </div>
-          </div>
-        ) : (
-          <div style={{ textAlign: 'center', padding: '3rem' }}>
-            <p style={{ color: '#6b7280' }}>Select a chapter to start reading</p>
-          </div>
-        )}
+          )}
+        </aside>
+      </div>
+
+      {/* Bottom progress */}
+      <div
+        style={{
+          display: 'flex',
+          alignItems: 'center',
+          gap: 18,
+          padding: '10px 28px',
+          borderTop: '1px solid var(--rule)',
+          background: 'var(--paper)',
+        }}
+      >
+        <Icon name="left" size={13} color="var(--ink-3)" />
+        <div
+          style={{
+            flex: 1,
+            height: 2,
+            background: 'var(--rule)',
+            position: 'relative',
+          }}
+        >
+          <div
+            style={{
+              position: 'absolute',
+              left: 0,
+              top: 0,
+              height: '100%',
+              width: `${(currentPage / totalPages) * 100}%`,
+              background: 'var(--ink)',
+            }}
+          />
+        </div>
+        <Icon name="right" size={13} color="var(--ink-3)" />
+        <div
+          className="mono"
+          style={{
+            fontSize: 10,
+            color: 'var(--ink-3)',
+            minWidth: 180,
+            textAlign: 'right',
+            textTransform: 'uppercase',
+            letterSpacing: '.08em',
+          }}
+        >
+          {currentChapter
+            ? `Ch ${currentPage} / ${totalPages}`
+            : '—'}
+        </div>
       </div>
     </div>
   )
+}
+
+const centerStyle: React.CSSProperties = {
+  display: 'flex',
+  flexDirection: 'column',
+  justifyContent: 'center',
+  alignItems: 'center',
+  minHeight: '80vh',
+  background: 'var(--paper)',
+  color: 'var(--ink)',
 }

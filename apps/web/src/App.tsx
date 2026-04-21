@@ -24,7 +24,7 @@ import Navbar from './components/Navbar'
 
 function App() {
   return (
-    <div style={{ minHeight: '100vh', backgroundColor: '#f9fafb' }}>
+    <div style={{ minHeight: '100vh', background: 'var(--paper)' }}>
       <Navbar />
       <Routes>
         <Route path="/" element={<HomePage />} />
