@@ -51,7 +51,6 @@ export const STR = {
     feed: { en: 'Feed', zh: '动态' },
     recs: { en: 'For you', zh: '推荐' },
     archive: { en: 'Archive', zh: '公版' },
-    dao: { en: 'DAO', zh: '治理' },
   },
   reader: {
     chapter: { en: 'Chapter', zh: '章' },

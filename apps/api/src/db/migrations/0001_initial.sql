@@ -250,34 +250,7 @@ CREATE TABLE IF NOT EXISTS rankings (
     UNIQUE(type, book_id, period)
 );
 
--- Proposals table (for DAO governance)
-CREATE TABLE IF NOT EXISTS proposals (
-    id TEXT PRIMARY KEY,
-    title TEXT NOT NULL,
-    description TEXT NOT NULL,
-    type TEXT NOT NULL CHECK (type IN ('feature', 'policy', 'treasury', 'upgrade')),
-    proposer_id TEXT NOT NULL,
-    status TEXT DEFAULT 'active' CHECK (status IN ('active', 'passed', 'rejected', 'executed')),
-    votes_for INTEGER DEFAULT 0,
-    votes_against INTEGER DEFAULT 0,
-    voting_end_at INTEGER NOT NULL,
-    executed_at INTEGER,
-    created_at INTEGER NOT NULL,
-    FOREIGN KEY (proposer_id) REFERENCES users(id) ON DELETE CASCADE
-);
 
--- Votes table (for DAO governance)
-CREATE TABLE IF NOT EXISTS votes (
-    id TEXT PRIMARY KEY,
-    proposal_id TEXT NOT NULL,
-    voter_id TEXT NOT NULL,
-    vote_type TEXT NOT NULL CHECK (vote_type IN ('for', 'against')),
-    weight INTEGER DEFAULT 1,
-    created_at INTEGER NOT NULL,
-    FOREIGN KEY (proposal_id) REFERENCES proposals(id) ON DELETE CASCADE,
-    FOREIGN KEY (voter_id) REFERENCES users(id) ON DELETE CASCADE,
-    UNIQUE(proposal_id, voter_id)
-);
 
 -- Audit logs table (for admin)
 CREATE TABLE IF NOT EXISTS audit_logs (
@@ -439,8 +412,6 @@ CREATE INDEX IF NOT EXISTS idx_ratings_user ON ratings(user_id);
 CREATE INDEX IF NOT EXISTS idx_notifications_user ON notifications(user_id, is_read);
 CREATE INDEX IF NOT EXISTS idx_purchases_user ON purchases(user_id);
 CREATE INDEX IF NOT EXISTS idx_book_similarities ON book_similarities(book_id_1, similarity_score DESC);
-CREATE INDEX IF NOT EXISTS idx_proposals_status ON proposals(status);
-CREATE INDEX IF NOT EXISTS idx_votes_proposal ON votes(proposal_id);
 CREATE INDEX IF NOT EXISTS idx_audit_logs_user ON audit_logs(user_id, created_at);
 CREATE INDEX IF NOT EXISTS idx_public_domain_books_status ON public_domain_books(status);
 CREATE INDEX IF NOT EXISTS idx_public_domain_books_category ON public_domain_books(category);

@@ -15,7 +15,6 @@ import SearchPage from './pages/SearchPage'
 import RecommendationsPage from './pages/RecommendationsPage'
 import AdminDashboardPage from './pages/admin/AdminDashboardPage'
 import AnalyticsPage from './pages/analytics/AnalyticsPage'
-import DaoPage from './pages/dao/DaoPage'
 import PublicDomainBooksPage from './pages/public-domain/PublicDomainBooksPage'
 import BlogPage from './pages/blog/BlogPage'
 import BlogSettingsPage from './pages/blog/BlogSettingsPage'
@@ -66,7 +65,6 @@ function App() {
         <Route path="/dashboard" element={<DashboardPage />} />
         <Route path="/admin" element={<AdminDashboardPage />} />
         <Route path="/analytics" element={<AnalyticsPage />} />
-        <Route path="/dao" element={<DaoPage />} />
         <Route path="/public-domain" element={<PublicDomainBooksPage />} />
         <Route path="/blog/:subdomain" element={<BlogPage />} />
         <Route path="/blog-settings" element={<BlogSettingsPage />} />

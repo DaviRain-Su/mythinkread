@@ -15,7 +15,6 @@ const NAV_ITEMS: Array<[string, string, string, string]> = [
   ['/feed', 'feed', 'Feed', '动态'],
   ['/recommendations', 'recs', 'For you', '推荐'],
   ['/public-domain', 'archive', 'Archive', '公版'],
-  ['/dao', 'dao', 'DAO', '治理'],
 ]
 
 export default function Navbar() {

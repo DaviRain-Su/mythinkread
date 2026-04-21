@@ -19,7 +19,7 @@ import recommendationRoutes from './routes/recommendations'
 import i18nRoutes from './routes/i18n'
 import adminRoutes from './routes/admin'
 import analyticsRoutes from './routes/analytics'
-import daoRoutes from './routes/dao'
+
 import publicDomainRoutes from './routes/public-domain'
 import blogRoutes from './routes/blog'
 import collaborateRoutes from './routes/collaborate'
@@ -64,7 +64,6 @@ app.route('/api/recommendations', recommendationRoutes)
 app.route('/api/i18n', i18nRoutes)
 app.route('/api/admin', adminRoutes)
 app.route('/api/analytics', analyticsRoutes)
-app.route('/api/dao', daoRoutes)
 app.route('/api/public-domain', publicDomainRoutes)
 app.route('/api/blog', blogRoutes)
 app.route('/api/collaborate', collaborateRoutes)
