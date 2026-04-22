@@ -3,6 +3,23 @@ import { useLangStore } from '../stores/langStore'
 import { useNavigate, useLocation } from 'react-router-dom'
 import NotificationBell from './NotificationBell'
 import { Icon } from './mtr/primitives'
+import React, { useState, useCallback } from 'react'
+
+// Kumo UI Command Palette type
+interface CommandPaletteProps {
+  open: boolean
+  onOpenChange: (open: boolean) => void
+  items: Array<{ label: string; value: string }>
+  onSelect: (value: string) => void
+  placeholder?: string
+}
+
+// Kumo UI Command Palette (lazy loaded to avoid bundle size impact)
+const CommandPalette = React.lazy(() =>
+  import('@cloudflare/kumo').then((m) => ({
+    default: m.CommandPalette as unknown as React.ComponentType<CommandPaletteProps>,
+  }))
+)
 
 const NAV_ITEMS: Array<[string, string, string, string]> = [
   ['/books', 'discover', 'Discover', '发现'],
@@ -23,9 +40,20 @@ export default function Navbar() {
   const location = useLocation()
   const { user, isAuthenticated, logout } = useAuthStore()
   const { lang, toggle } = useLangStore()
+  const [commandOpen, setCommandOpen] = useState(false)
 
   const isActive = (path: string) =>
     location.pathname === path || (path !== '/' && location.pathname.startsWith(path))
+
+  const handleCommandSelect = useCallback((value: string) => {
+    navigate(value)
+    setCommandOpen(false)
+  }, [navigate])
+
+  const commandItems = NAV_ITEMS.map(([path, _key, en, zh]) => ({
+    label: lang === 'zh' ? zh : en,
+    value: path,
+  }))
 
   return (
     <nav
@@ -109,9 +137,9 @@ export default function Navbar() {
           })}
         </nav>
 
-        {/* Search */}
+        {/* Search - Command Palette */}
         <button
-          onClick={() => navigate('/search')}
+          onClick={() => setCommandOpen(true)}
           style={{
             display: 'flex',
             alignItems: 'center',
@@ -134,6 +162,18 @@ export default function Navbar() {
             ⌘K
           </span>
         </button>
+
+        {commandOpen && (
+          <React.Suspense fallback={null}>
+            <CommandPalette
+              open={commandOpen}
+              onOpenChange={setCommandOpen}
+              items={commandItems}
+              onSelect={handleCommandSelect}
+              placeholder={lang === 'zh' ? '搜索页面...' : 'Search pages...'}
+            />
+          </React.Suspense>
+        )}
 
         {/* Language toggle */}
         <div
