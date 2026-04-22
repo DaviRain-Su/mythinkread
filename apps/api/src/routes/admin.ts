@@ -13,7 +13,7 @@ admin.use('*', async (c, next) => {
   const token = authHeader.slice(7)
   try {
     const { verifyToken } = await import('../lib/jwt')
-    const payload = await verifyToken(token)
+    const payload = await verifyToken(token, c.env)
     
     // Check admin role
     const db = c.env.DB

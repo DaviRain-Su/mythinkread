@@ -21,7 +21,7 @@ fsrsRoutes.use('*', async (c, next) => {
     return c.json({ error: 'Unauthorized' }, 401)
   }
   const token = auth.slice(7)
-  const payload = await verifyToken(token, c.env.JWT_SECRET)
+  const payload = await verifyToken(token, c.env)
   if (!payload) {
     return c.json({ error: 'Invalid token' }, 401)
   }

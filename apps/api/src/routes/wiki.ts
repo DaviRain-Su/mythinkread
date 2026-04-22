@@ -8,7 +8,7 @@ const wikiRoutes = new Hono<{ Bindings: Env }>()
 async function optionalAuth(c: any, next: any) {
   const auth = c.req.header('Authorization')
   if (auth?.startsWith('Bearer ')) {
-    const payload = await verifyToken(auth.slice(7), c.env.JWT_SECRET)
+    const payload = await verifyToken(auth.slice(7), c.env)
     if (payload) c.set('jwtPayload' as never, payload)
   }
   await next()
@@ -93,7 +93,7 @@ wikiRoutes.post('/books/:bookId/entries', async (c) => {
   if (!auth?.startsWith('Bearer ')) {
     return c.json({ error: 'Unauthorized' }, 401)
   }
-  const payload = await verifyToken(auth.slice(7), c.env.JWT_SECRET)
+  const payload = await verifyToken(auth.slice(7), c.env)
   if (!payload) {
     return c.json({ error: 'Invalid token' }, 401)
   }
@@ -148,7 +148,7 @@ wikiRoutes.put('/books/:bookId/entries/:slug', async (c) => {
   if (!auth?.startsWith('Bearer ')) {
     return c.json({ error: 'Unauthorized' }, 401)
   }
-  const payload = await verifyToken(auth.slice(7), c.env.JWT_SECRET)
+  const payload = await verifyToken(auth.slice(7), c.env)
   if (!payload) {
     return c.json({ error: 'Invalid token' }, 401)
   }
@@ -213,7 +213,7 @@ wikiRoutes.post('/books/:bookId/relations', async (c) => {
   if (!auth?.startsWith('Bearer ')) {
     return c.json({ error: 'Unauthorized' }, 401)
   }
-  const payload = await verifyToken(auth.slice(7), c.env.JWT_SECRET)
+  const payload = await verifyToken(auth.slice(7), c.env)
   if (!payload) {
     return c.json({ error: 'Invalid token' }, 401)
   }

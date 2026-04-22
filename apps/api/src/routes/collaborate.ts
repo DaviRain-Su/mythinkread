@@ -19,7 +19,7 @@ collaborate.use('*', async (c, next) => {
     const token = authHeader.slice(7)
     try {
       const { verifyToken } = await import('../lib/jwt')
-      const payload = await verifyToken(token)
+      const payload = await verifyToken(token, c.env)
       // @ts-ignore
       c.set('user', payload)
     } catch {

@@ -108,7 +108,7 @@ publicDomain.post('/import', async (c) => {
   const token = authHeader.slice(7)
   try {
     const { verifyToken } = await import('../lib/jwt')
-    const payload = await verifyToken(token)
+    const payload = await verifyToken(token, c.env)
     
     const db = c.env.DB
     const user = await db.prepare('SELECT role FROM users WHERE id = ?')

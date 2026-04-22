@@ -1,6 +1,8 @@
 import { useState, useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useAuthStore } from '../stores/authStore'
+import { useWallet } from '@solana/wallet-adapter-react'
+import bs58 from 'bs58'
 
 interface Book {
   id: string
@@ -25,7 +27,8 @@ export default function ProfilePage() {
   const [progress, setProgress] = useState<ReadingProgress[]>([])
   const [activeTab, setActiveTab] = useState<'books' | 'progress' | 'data' | 'wallet'>('books')
   const [walletAddress, setWalletAddress] = useState<string | null>(null)
-  const [walletInput, setWalletInput] = useState('')
+  const [walletLinking, setWalletLinking] = useState(false)
+  const wallet = useWallet()
 
   useEffect(() => {
     if (user) {
@@ -79,9 +82,44 @@ export default function ProfilePage() {
   }
 
   const handleLinkWallet = async () => {
-    if (!walletInput.trim()) return
+    if (!wallet.connected || !wallet.publicKey) {
+      try {
+        await wallet.connect()
+      } catch (err) {
+        alert(err instanceof Error ? err.message : 'Failed to connect wallet')
+        return
+      }
+    }
+    const publicKey = wallet.publicKey
+    if (!publicKey) {
+      alert('No wallet connected')
+      return
+    }
+    if (!wallet.signMessage) {
+      alert('Selected wallet does not support message signing')
+      return
+    }
+    setWalletLinking(true)
     try {
       const token = localStorage.getItem('mtr_token')
+      const walletAddr = publicKey.toBase58()
+
+      // Step 1: fetch a server-issued nonce.
+      const nonceRes = await fetch(
+        `/api/solana/nonce?wallet=${encodeURIComponent(walletAddr)}`,
+        { headers: { Authorization: `Bearer ${token}` } }
+      )
+      if (!nonceRes.ok) throw new Error('Failed to obtain nonce')
+      const { message } = (await nonceRes.json()) as {
+        nonce: string
+        message: string
+      }
+
+      // Step 2: ask the wallet to sign the nonce.
+      const sigBytes = await wallet.signMessage(new TextEncoder().encode(message))
+      const signature = bs58.encode(sigBytes)
+
+      // Step 3: submit to the API.
       const res = await fetch('/api/solana/link', {
         method: 'POST',
         headers: {
@@ -89,16 +127,20 @@ export default function ProfilePage() {
           Authorization: `Bearer ${token}`
         },
         body: JSON.stringify({
-          wallet_address: walletInput,
-          signature: 'mock_signature',
-          message: 'link_wallet'
+          wallet_address: walletAddr,
+          signature,
+          message
         })
       })
-      if (!res.ok) throw new Error('Failed to link wallet')
-      setWalletAddress(walletInput)
-      setWalletInput('')
+      if (!res.ok) {
+        const errBody = await res.json().catch(() => ({}))
+        throw new Error((errBody as { error?: string }).error || 'Failed to link wallet')
+      }
+      setWalletAddress(walletAddr)
     } catch (err) {
       alert(err instanceof Error ? err.message : 'Failed to link wallet')
+    } finally {
+      setWalletLinking(false)
     }
   }
 
@@ -331,28 +373,18 @@ export default function ProfilePage() {
           ) : (
             <div>
               <p style={{ color: 'var(--ink-3)', marginBottom: '1rem' }}>
-                连接 Solana 钱包以解锁 Web3 功能
+                连接 Solana 钱包以解锁 Web3 功能（支持 Phantom / Solflare）
               </p>
-              <input
-                type="text"
-                value={walletInput}
-                onChange={(e) => setWalletInput(e.target.value)}
-                placeholder="输入 Solana 钱包地址..."
-                className="mtr-input"
-                style={{
-                  width: '100%',
-                  marginBottom: '0.75rem'
-                }}
-              />
               <button
-                className={walletInput.trim() ? 'btn accent' : 'btn ghost'}
+                className="btn accent"
                 onClick={handleLinkWallet}
-                disabled={!walletInput.trim()}
+                disabled={walletLinking}
+                aria-label="connect-wallet"
                 style={{
                   padding: '0.5rem 1rem'
                 }}
               >
-                连接钱包
+                {walletLinking ? '签名中…' : '连接钱包'}
               </button>
             </div>
           )}

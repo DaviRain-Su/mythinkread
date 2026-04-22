@@ -88,7 +88,7 @@ auth.post('/login', zValidator('json', loginSchema), async (c) => {
     userId: user.id as string,
     username: user.username as string,
     role: user.role as string
-  })
+  }, c.env)
 
   return c.json({
     token,
@@ -117,9 +117,8 @@ auth.get('/me', async (c) => {
   const token = authHeader.slice(7)
   
   try {
-    const { createToken } = await import('../lib/jwt')
     const { verifyToken } = await import('../lib/jwt')
-    const payload = await verifyToken(token)
+    const payload = await verifyToken(token, c.env)
     
     const db = c.env.DB
     const user = await db.prepare(`
