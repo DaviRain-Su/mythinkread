@@ -152,7 +152,11 @@ books.get('/:id', async (c) => {
 const chapterSchema = z.object({
   title: z.string().min(1).max(200),
   content: z.string().min(1).max(50000),
-  idx: z.number().optional()
+  idx: z.number().optional(),
+  // Optional reference to the AI draft the author started from.
+  // Required by the publish-time edit-ratio gate when the book's
+  // `ai_mode != 'ai_only'` (PRD Task 3.4).
+  ai_draft_id: z.string().min(1).max(64).optional()
 })
 
 books.post('/:id/chapters', zValidator('json', chapterSchema), async (c) => {
@@ -160,7 +164,7 @@ books.post('/:id/chapters', zValidator('json', chapterSchema), async (c) => {
   const user = c.get('user') as { userId: string }
   const db = c.env.DB
   const bookId = c.req.param('id')
-  const { title, content, idx } = c.req.valid('json')
+  const { title, content, idx, ai_draft_id } = c.req.valid('json')
 
   // Verify book exists and belongs to user
   const book = await db.prepare(`
@@ -196,6 +200,15 @@ books.post('/:id/chapters', zValidator('json', chapterSchema), async (c) => {
   await c.env.KV.put(`chapter:draft:${chapterId}`, content, { expirationTtl: 7 * 24 * 60 * 60 })
   console.log(`Stored draft content for chapter ${chapterId} in KV`)
 
+  // Remember which AI draft (if any) this chapter was derived from so
+  // the publish gate can compute edit-ratio. We store the pointer (not
+  // the body) so we share a single KV copy of the original AI output.
+  if (ai_draft_id) {
+    await c.env.KV.put(`chapter:ai-draft:${chapterId}`, ai_draft_id, {
+      expirationTtl: 30 * 24 * 60 * 60
+    })
+  }
+
   await db.prepare(`
     INSERT INTO chapters (id, book_id, idx, title, content_cid, word_count, created_at)
     VALUES (?, ?, ?, ?, ?, ?, ?)
@@ -218,6 +231,11 @@ books.post('/:id/chapters', zValidator('json', chapterSchema), async (c) => {
   }, 201)
 })
 
+// Minimum human edit ratio across all chapters required to publish a
+// hybrid book (PRD Task 3.4). Below this, the system is effectively
+// republishing raw AI output under a hybrid label — rejected with 422.
+const AI_EDIT_RATIO_THRESHOLD = 0.20
+
 // POST /api/books/:id/publish - Publish book (triggers async processing)
 books.post('/:id/publish', async (c) => {
   // @ts-ignore - user is set by auth middleware
@@ -230,7 +248,11 @@ books.post('/:id/publish', async (c) => {
     SELECT b.* FROM books b
     JOIN creators c ON b.creator_id = c.id
     WHERE b.id = ? AND c.user_id = ?
-  `).bind(bookId, user.userId).first()
+  `).bind(bookId, user.userId).first<{
+    id: string
+    status: string
+    ai_mode: string
+  }>()
 
   if (!book) {
     return c.json({ error: 'BOOK_NOT_FOUND_OR_UNAUTHORIZED' }, 404)
@@ -240,13 +262,57 @@ books.post('/:id/publish', async (c) => {
     return c.json({ error: 'BOOK_NOT_DRAFT' }, 400)
   }
 
-  // Check if book has chapters
-  const chapterCount = await db.prepare(`
-    SELECT COUNT(*) as count FROM chapters WHERE book_id = ?
-  `).bind(bookId).first()
+  // Load chapters now — we need them for the edit-ratio check below and
+  // for the "no chapters" guard. `id` is required; `word_count` lets us
+  // guarantee a stable order + provides a sanity check.
+  const chaptersRes = await db.prepare(`
+    SELECT id FROM chapters WHERE book_id = ? ORDER BY idx
+  `).bind(bookId).all<{ id: string }>()
+  const chapters = chaptersRes.results ?? []
 
-  if (!chapterCount || (chapterCount.count as number) === 0) {
+  if (chapters.length === 0) {
     return c.json({ error: 'NO_CHAPTERS' }, 400)
+  }
+
+  // ── Human/AI edit-ratio gate (PRD Task 3.4) ────────────────────────
+  //
+  // For any `ai_mode` other than `ai_only`, the author is declaring a
+  // hybrid or human-written book. We require the author to have visibly
+  // changed ≥ 20% of the original AI draft, otherwise we reject with
+  // HTTP 422 so the upstream UI can surface the constraint.
+  if (book.ai_mode !== 'ai_only') {
+    const { aggregateEditRatio } = await import('../lib/edit-ratio')
+
+    const pairs: Array<{ draft: string; final: string }> = []
+    for (const ch of chapters) {
+      const aiDraftId = await c.env.KV.get(`chapter:ai-draft:${ch.id}`)
+      if (!aiDraftId) {
+        // No AI draft recorded for this chapter — treat as 100% human.
+        // (Fully human-written chapters shouldn't lower the ratio.)
+        continue
+      }
+      const aiDraft = await c.env.KV.get(`draft:ai:${aiDraftId}`)
+      const finalBody = await c.env.KV.get(`chapter:draft:${ch.id}`)
+      if (!aiDraft || !finalBody) {
+        // Missing side of the comparison → skip rather than over-penalise.
+        continue
+      }
+      pairs.push({ draft: aiDraft, final: finalBody })
+    }
+
+    if (pairs.length > 0) {
+      const ratio = aggregateEditRatio(pairs)
+      if (ratio < AI_EDIT_RATIO_THRESHOLD) {
+        return c.json(
+          {
+            error: 'AI_RATIO_TOO_LOW',
+            measured: ratio,
+            required: AI_EDIT_RATIO_THRESHOLD
+          },
+          422
+        )
+      }
+    }
   }
 
   // Update status to publishing

@@ -6,6 +6,39 @@ import type { Env } from '../index'
 
 const ai = new Hono<{ Bindings: Env }>()
 
+/**
+ * TTL for AI draft snapshots in KV.
+ *
+ * Rationale: authors may iterate on a chapter for days/weeks between
+ * "generate draft" and "publish book". 30 days gives plenty of room
+ * while bounding storage cost. See PRD Task 3.4 — the publish-time
+ * human/AI edit-ratio gate relies on these snapshots being present.
+ */
+const AI_DRAFT_TTL_SECONDS = 30 * 24 * 60 * 60
+
+/**
+ * Generate a short, URL-safe draft id. Kept separate from chapter UUIDs
+ * because a draft can exist before the chapter row is created.
+ */
+function generateDraftId(): string {
+  const bytes = crypto.getRandomValues(new Uint8Array(16))
+  let hex = ''
+  for (const b of bytes) hex += b.toString(16).padStart(2, '0')
+  return hex
+}
+
+/**
+ * Persist an AI-generated body under `draft:ai:<id>` with 30d TTL and
+ * return the id. Callers forward the id to the client which in turn
+ * passes it to `POST /books/:bookId/chapters` so we can look the draft
+ * up again at publish time.
+ */
+async function saveAiDraft(env: Env, body: string): Promise<string> {
+  const id = generateDraftId()
+  await env.KV.put(`draft:ai:${id}`, body, { expirationTtl: AI_DRAFT_TTL_SECONDS })
+  return id
+}
+
 // Rate limiting helper
 async function checkRateLimit(kv: KVNamespace, key: string, limit: number, window: number): Promise<boolean> {
   const now = Math.floor(Date.now() / 1000)
@@ -68,7 +101,12 @@ ai.post('/generate', zValidator('json', generateSchema), async (c) => {
       temperature
     })
 
+    // Persist the original AI draft so the publish-time edit-ratio gate
+    // can compare it to the final author-edited body (PRD Task 3.4).
+    const draft_id = await saveAiDraft(c.env, content)
+
     return c.json({
+      draft_id,
       content,
       tokens_used: content.length,
       finish_reason: 'stop'
@@ -97,7 +135,8 @@ ai.post('/continue', zValidator('json', continueSchema), async (c) => {
 
   try {
     const content = await generateContinuation(c.env, previous_text, direction, max_tokens)
-    return c.json({ content, tokens_used: content.length, finish_reason: 'stop' })
+    const draft_id = await saveAiDraft(c.env, content)
+    return c.json({ draft_id, content, tokens_used: content.length, finish_reason: 'stop' })
   } catch (err) {
     console.error('AI continuation error:', err)
     return c.json({ error: 'AI_SERVICE_UNAVAILABLE' }, 503)
@@ -121,7 +160,8 @@ ai.post('/rewrite', zValidator('json', rewriteSchema), async (c) => {
 
   try {
     const content = await generateRewrite(c.env, text, style)
-    return c.json({ content, tokens_used: content.length, finish_reason: 'stop' })
+    const draft_id = await saveAiDraft(c.env, content)
+    return c.json({ draft_id, content, tokens_used: content.length, finish_reason: 'stop' })
   } catch (err) {
     console.error('AI rewrite error:', err)
     return c.json({ error: 'AI_SERVICE_UNAVAILABLE' }, 503)
