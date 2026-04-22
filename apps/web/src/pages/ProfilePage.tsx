@@ -141,7 +141,7 @@ export default function ProfilePage() {
     return (
       <div style={{ textAlign: 'center', padding: '3rem' }}>
         <p>请先登录</p>
-        <button onClick={() => navigate('/login')} style={{ marginTop: '1rem', padding: '0.5rem 1rem' }}>
+        <button className="btn accent" onClick={() => navigate('/login')} style={{ marginTop: '1rem', padding: '0.5rem 1rem' }}>
           去登录
         </button>
       </div>
@@ -151,23 +151,20 @@ export default function ProfilePage() {
   return (
     <div style={{ maxWidth: '72rem', margin: '0 auto', padding: '2rem 1rem' }}>
       {/* User Info */}
-      <div style={{ backgroundColor: 'white', borderRadius: '0.75rem', padding: '2rem', marginBottom: '2rem' }}>
-        <h1 style={{ fontSize: '1.5rem', fontWeight: 'bold', marginBottom: '0.5rem' }}>
+      <div style={{ backgroundColor: 'var(--paper)', borderRadius: '2px', padding: '2rem', marginBottom: '2rem' }}>
+        <h1 className="display" style={{ fontSize: '1.5rem', fontWeight: 500, marginBottom: '0.5rem' }}>
           {user.display_name || user.username}
         </h1>
-        <p style={{ color: '#6b7280' }}>@{user.username}</p>
+        <p style={{ color: 'var(--ink-3)' }}>@{user.username}</p>
         <button
+          className="btn ghost"
           onClick={() => {
             logout()
             navigate('/')
           }}
           style={{
             marginTop: '1rem',
-            padding: '0.5rem 1rem',
-            border: '1px solid #e5e7eb',
-            borderRadius: '0.5rem',
-            backgroundColor: 'white',
-            cursor: 'pointer'
+            padding: '0.5rem 1rem'
           }}
         >
           退出登录
@@ -185,13 +182,9 @@ export default function ProfilePage() {
           <button
             key={tab.key}
             onClick={() => setActiveTab(tab.key)}
+            className={activeTab === tab.key ? 'btn accent' : 'btn ghost'}
             style={{
-              padding: '0.5rem 1rem',
-              borderRadius: '0.5rem',
-              border: 'none',
-              cursor: 'pointer',
-              backgroundColor: activeTab === tab.key ? '#2563eb' : '#f3f4f6',
-              color: activeTab === tab.key ? 'white' : '#4b5563'
+              padding: '0.5rem 1rem'
             }}
           >
             {tab.label}
@@ -208,9 +201,9 @@ export default function ProfilePage() {
               onClick={() => navigate(`/books/${book.id}`)}
               style={{
                 padding: '1rem',
-                backgroundColor: 'white',
-                borderRadius: '0.75rem',
-                border: '1px solid #e5e7eb',
+                backgroundColor: 'var(--paper)',
+                borderRadius: '2px',
+                border: '1px solid var(--rule)',
                 cursor: 'pointer'
               }}
             >
@@ -226,14 +219,14 @@ export default function ProfilePage() {
                   {book.status === 'published' ? '已发布' : '草稿'}
                 </span>
               </div>
-              <p style={{ fontSize: '0.875rem', color: '#6b7280', marginTop: '0.5rem' }}>
+              <p style={{ fontSize: '0.875rem', color: 'var(--ink-3)', marginTop: '0.5rem' }}>
                 {book.chapter_count} 章 · {book.word_count} 字
               </p>
             </div>
           ))}
           {myBooks.length === 0 && (
-            <div style={{ textAlign: 'center', padding: '3rem', color: '#6b7280' }}>
-              还没有作品，<button onClick={() => navigate('/create')} style={{ color: '#2563eb', background: 'none', border: 'none', cursor: 'pointer' }}>去创作</button>
+            <div style={{ textAlign: 'center', padding: '3rem', color: 'var(--ink-3)' }}>
+              还没有作品，<button className="btn accent" onClick={() => navigate('/create')}>去创作</button>
             </div>
           )}
         </div>
@@ -246,22 +239,22 @@ export default function ProfilePage() {
               key={p.book_id}
               style={{
                 padding: '1rem',
-                backgroundColor: 'white',
-                borderRadius: '0.75rem',
-                border: '1px solid #e5e7eb'
+                backgroundColor: 'var(--paper)',
+                borderRadius: '2px',
+                border: '1px solid var(--rule)'
               }}
             >
               <h3 style={{ fontWeight: 600, marginBottom: '0.5rem' }}>{p.book_title}</h3>
               <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
-                <div style={{ flex: 1, height: '0.5rem', backgroundColor: '#e5e7eb', borderRadius: '0.25rem' }}>
+                <div style={{ flex: 1, height: '0.5rem', backgroundColor: 'var(--rule)', borderRadius: '0.25rem' }}>
                   <div style={{
                     width: `${p.percent}%`,
                     height: '100%',
-                    backgroundColor: '#2563eb',
+                    backgroundColor: 'var(--accent)',
                     borderRadius: '0.25rem'
                   }} />
                 </div>
-                <span style={{ fontSize: '0.875rem', color: '#6b7280' }}>
+                <span style={{ fontSize: '0.875rem', color: 'var(--ink-3)' }}>
                   {p.percent.toFixed(1)}%
                 </span>
               </div>
@@ -273,7 +266,7 @@ export default function ProfilePage() {
             </div>
           ))}
           {progress.length === 0 && (
-            <div style={{ textAlign: 'center', padding: '3rem', color: '#6b7280' }}>
+            <div style={{ textAlign: 'center', padding: '3rem', color: 'var(--ink-3)' }}>
               还没有阅读记录
             </div>
           )}
@@ -281,65 +274,55 @@ export default function ProfilePage() {
       )}
 
       {activeTab === 'data' && (
-        <div style={{ backgroundColor: 'white', borderRadius: '0.75rem', padding: '1.5rem' }}>
-          <h2 style={{ fontSize: '1.25rem', fontWeight: 'bold', marginBottom: '1rem' }}>数据导出</h2>
-          <p style={{ color: '#6b7280', marginBottom: '1.5rem' }}>
+        <div style={{ backgroundColor: 'var(--paper)', borderRadius: '2px', padding: '1.5rem' }}>
+          <h2 style={{ fontSize: '1.25rem', fontWeight: 500, marginBottom: '1rem' }}>数据导出</h2>
+          <p style={{ color: 'var(--ink-3)', marginBottom: '1.5rem' }}>
             导出你的个人数据，包括阅读进度、批注、评论等。数据以 JSON 格式下载。
           </p>
           <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
             <button
+              className="btn ghost"
               onClick={() => handleExport('reading')}
               style={{
                 padding: '0.75rem',
-                border: '1px solid #e5e7eb',
-                borderRadius: '0.5rem',
-                backgroundColor: 'white',
-                cursor: 'pointer',
                 textAlign: 'left'
               }}
             >
               <div style={{ fontWeight: 600 }}>导出阅读进度</div>
-              <div style={{ fontSize: '0.875rem', color: '#6b7280' }}>包含所有书籍的阅读进度</div>
+              <div style={{ fontSize: '0.875rem', color: 'var(--ink-3)' }}>包含所有书籍的阅读进度</div>
             </button>
             <button
+              className="btn ghost"
               onClick={() => handleExport('all')}
               style={{
                 padding: '0.75rem',
-                border: '1px solid #e5e7eb',
-                borderRadius: '0.5rem',
-                backgroundColor: 'white',
-                cursor: 'pointer',
                 textAlign: 'left'
               }}
             >
               <div style={{ fontWeight: 600 }}>导出全部数据</div>
-              <div style={{ fontSize: '0.875rem', color: '#6b7280' }}>包含阅读进度、批注、评论等所有数据</div>
+              <div style={{ fontSize: '0.875rem', color: 'var(--ink-3)' }}>包含阅读进度、批注、评论等所有数据</div>
             </button>
           </div>
         </div>
       )}
 
       {activeTab === 'wallet' && (
-        <div style={{ backgroundColor: 'white', borderRadius: '0.75rem', padding: '1.5rem' }}>
-          <h2 style={{ fontSize: '1.25rem', fontWeight: 'bold', marginBottom: '1rem' }}>Solana 钱包</h2>
+        <div style={{ backgroundColor: 'var(--paper)', borderRadius: '2px', padding: '1.5rem' }}>
+          <h2 style={{ fontSize: '1.25rem', fontWeight: 500, marginBottom: '1rem' }}>Solana 钱包</h2>
           
           {walletAddress ? (
             <div>
               <div style={{ marginBottom: '1rem' }}>
-                <p style={{ color: '#6b7280', marginBottom: '0.5rem' }}>已连接钱包</p>
+                <p style={{ color: 'var(--ink-3)', marginBottom: '0.5rem' }}>已连接钱包</p>
                 <p style={{ fontFamily: 'monospace', fontSize: '0.875rem', wordBreak: 'break-all' }}>
                   {walletAddress}
                 </p>
               </div>
               <button
+                className="btn ghost"
                 onClick={handleUnlinkWallet}
                 style={{
-                  padding: '0.5rem 1rem',
-                  backgroundColor: '#ef4444',
-                  color: 'white',
-                  border: 'none',
-                  borderRadius: '0.5rem',
-                  cursor: 'pointer'
+                  padding: '0.5rem 1rem'
                 }}
               >
                 断开连接
@@ -347,7 +330,7 @@ export default function ProfilePage() {
             </div>
           ) : (
             <div>
-              <p style={{ color: '#6b7280', marginBottom: '1rem' }}>
+              <p style={{ color: 'var(--ink-3)', marginBottom: '1rem' }}>
                 连接 Solana 钱包以解锁 Web3 功能
               </p>
               <input
@@ -355,25 +338,18 @@ export default function ProfilePage() {
                 value={walletInput}
                 onChange={(e) => setWalletInput(e.target.value)}
                 placeholder="输入 Solana 钱包地址..."
+                className="mtr-input"
                 style={{
                   width: '100%',
-                  padding: '0.75rem',
-                  border: '1px solid #e5e7eb',
-                  borderRadius: '0.5rem',
-                  fontSize: '0.875rem',
                   marginBottom: '0.75rem'
                 }}
               />
               <button
+                className={walletInput.trim() ? 'btn accent' : 'btn ghost'}
                 onClick={handleLinkWallet}
                 disabled={!walletInput.trim()}
                 style={{
-                  padding: '0.5rem 1rem',
-                  backgroundColor: walletInput.trim() ? '#2563eb' : '#9ca3af',
-                  color: 'white',
-                  border: 'none',
-                  borderRadius: '0.5rem',
-                  cursor: walletInput.trim() ? 'pointer' : 'not-allowed'
+                  padding: '0.5rem 1rem'
                 }}
               >
                 连接钱包

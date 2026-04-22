@@ -85,7 +85,7 @@ export default function SearchPage() {
 
   return (
     <div style={{ maxWidth: '72rem', margin: '0 auto', padding: '2rem 1rem' }}>
-      <h1 style={{ fontSize: '1.5rem', fontWeight: 'bold', marginBottom: '1.5rem' }}>搜索</h1>
+      <h1 className="display" style={{ fontSize: '1.5rem', fontWeight: 500, marginBottom: '1.5rem' }}>搜索</h1>
 
       {/* Search Input */}
       <div style={{ position: 'relative', marginBottom: '1.5rem' }}>
@@ -100,23 +100,18 @@ export default function SearchPage() {
             }}
             onKeyDown={(e) => e.key === 'Enter' && handleSearch()}
             placeholder="搜索书名、作者、书单..."
+            className="mtr-input"
             style={{
               flex: 1,
               padding: '0.75rem 1rem',
-              border: '1px solid #e5e7eb',
-              borderRadius: '0.5rem',
               fontSize: '1rem'
             }}
           />
           <button
             onClick={handleSearch}
+            className="btn accent"
             style={{
               padding: '0.75rem 1.5rem',
-              backgroundColor: '#2563eb',
-              color: 'white',
-              border: 'none',
-              borderRadius: '0.5rem',
-              cursor: 'pointer',
               fontSize: '1rem'
             }}
           >
@@ -131,9 +126,9 @@ export default function SearchPage() {
             top: '100%',
             left: 0,
             right: 0,
-            backgroundColor: 'white',
-            border: '1px solid #e5e7eb',
-            borderRadius: '0.5rem',
+            background: 'var(--paper)',
+            border: '1px solid var(--rule)',
+            borderRadius: '2px',
             marginTop: '0.25rem',
             zIndex: 50,
             boxShadow: '0 4px 6px -1px rgba(0,0,0,0.1)'
@@ -153,11 +148,11 @@ export default function SearchPage() {
                   border: 'none',
                   backgroundColor: 'transparent',
                   cursor: 'pointer',
-                  borderBottom: '1px solid #f3f4f6'
+                  borderBottom: '1px solid var(--rule-2)'
                 }}
               >
                 <span>{s.text}</span>
-                <span style={{ fontSize: '0.75rem', color: '#9ca3af', marginLeft: '0.5rem' }}>
+                <span style={{ fontSize: '0.75rem', color: 'var(--ink-4)', marginLeft: '0.5rem' }}>
                   {s.type === 'book' ? '书籍' : s.type === 'creator' ? '作者' : '标签'}
                 </span>
               </button>
@@ -175,14 +170,8 @@ export default function SearchPage() {
               setActiveType(t.key)
               if (query.trim()) setSearchParams({ q: query, type: t.key })
             }}
-            style={{
-              padding: '0.5rem 1rem',
-              borderRadius: '0.5rem',
-              border: 'none',
-              cursor: 'pointer',
-              backgroundColor: activeType === t.key ? '#2563eb' : '#f3f4f6',
-              color: activeType === t.key ? 'white' : '#4b5563'
-            }}
+            className={activeType === t.key ? 'chip active' : 'chip'}
+            style={{ padding: '0.5rem 1rem', fontSize: '0.875rem' }}
           >
             {t.label}
           </button>
@@ -205,15 +194,15 @@ export default function SearchPage() {
                     onClick={() => navigate(`/books/${book.id}`)}
                     style={{
                       padding: '1rem',
-                      backgroundColor: 'white',
-                      borderRadius: '0.75rem',
-                      border: '1px solid #e5e7eb',
+                      background: 'var(--paper)',
+                      borderRadius: '2px',
+                      border: '1px solid var(--rule)',
                       cursor: 'pointer'
                     }}
                   >
-                    <h3 style={{ fontWeight: 600, marginBottom: '0.25rem' }}>{book.title}</h3>
-                    <p style={{ fontSize: '0.875rem', color: '#6b7280' }}>{book.author}</p>
-                    <p style={{ fontSize: '0.875rem', color: '#fbbf24' }}>⭐ {book.rating_avg.toFixed(1)}</p>
+                    <h3 style={{ fontWeight: 600, marginBottom: '0.25rem', color: 'var(--ink)' }}>{book.title}</h3>
+                    <p style={{ fontSize: '0.875rem', color: 'var(--ink-3)' }}>{book.author}</p>
+                    <p style={{ fontSize: '0.875rem', color: 'var(--gold)' }}>⭐ {book.rating_avg.toFixed(1)}</p>
                   </div>
                 ))}
               </div>
@@ -230,13 +219,13 @@ export default function SearchPage() {
                     key={creator.id}
                     style={{
                       padding: '1rem',
-                      backgroundColor: 'white',
-                      borderRadius: '0.75rem',
-                      border: '1px solid #e5e7eb'
+                      background: 'var(--paper)',
+                      borderRadius: '2px',
+                      border: '1px solid var(--rule)'
                     }}
                   >
-                    <h3 style={{ fontWeight: 600 }}>{creator.display_name}</h3>
-                    <p style={{ fontSize: '0.875rem', color: '#6b7280' }}>{creator.bio || '暂无简介'}</p>
+                    <h3 style={{ fontWeight: 600, color: 'var(--ink)' }}>{creator.display_name}</h3>
+                    <p style={{ fontSize: '0.875rem', color: 'var(--ink-3)' }}>{creator.bio || '暂无简介'}</p>
                   </div>
                 ))}
               </div>
@@ -254,15 +243,15 @@ export default function SearchPage() {
                     onClick={() => navigate(`/booklists/${list.id}`)}
                     style={{
                       padding: '1rem',
-                      backgroundColor: 'white',
-                      borderRadius: '0.75rem',
-                      border: '1px solid #e5e7eb',
+                      background: 'var(--paper)',
+                      borderRadius: '2px',
+                      border: '1px solid var(--rule)',
                       cursor: 'pointer'
                     }}
                   >
-                    <h3 style={{ fontWeight: 600, marginBottom: '0.25rem' }}>{list.title}</h3>
-                    <p style={{ fontSize: '0.875rem', color: '#6b7280' }}>{list.description || '暂无描述'}</p>
-                    <p style={{ fontSize: '0.875rem', color: '#9ca3af' }}>by {list.username}</p>
+                    <h3 style={{ fontWeight: 600, marginBottom: '0.25rem', color: 'var(--ink)' }}>{list.title}</h3>
+                    <p style={{ fontSize: '0.875rem', color: 'var(--ink-3)' }}>{list.description || '暂无描述'}</p>
+                    <p style={{ fontSize: '0.875rem', color: 'var(--ink-4)' }}>by {list.username}</p>
                   </div>
                 ))}
               </div>
@@ -272,7 +261,7 @@ export default function SearchPage() {
           {/* No Results */}
           {searchParams.get('q') && !loading &&
             (!results.books?.length && !results.creators?.length && !results.booklists?.length) && (
-            <div style={{ textAlign: 'center', padding: '3rem', color: '#6b7280' }}>
+            <div style={{ textAlign: 'center', padding: '3rem', color: 'var(--ink-3)' }}>
               未找到相关结果
             </div>
           )}

@@ -1,6 +1,14 @@
 import { useMemo, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { Icon, Cover, type CoverBook } from '../../components/mtr/primitives'
+import React, { Suspense } from 'react'
+
+// Kumo UI Button (lazy loaded)
+const KumoButton = React.lazy(() =>
+  import('@cloudflare/kumo').then((m) => ({
+    default: m.Button as unknown as React.ComponentType<any>,
+  }))
+)
 
 const BOOKS: CoverBook[] = [
   { id: 'mirror-of-moon', title: 'The Mirror of Moonfall', author: 'Aster-07 × Yu Wen', published: '2026·03' },
@@ -68,15 +76,15 @@ export default function DashboardPage() {
             </div>
           </div>
           <div style={{ display: 'flex', gap: 10 }}>
-            <button className="btn ghost">
-              <Icon name="download" size={11} /> &nbsp;Export JSON
-            </button>
-            <button className="btn ghost">
-              <Icon name="download" size={11} /> &nbsp;Export CSV
-            </button>
-            <button className="btn">
-              <Icon name="globe" size={11} /> &nbsp;API key
-            </button>
+            <Suspense fallback={<button className="btn ghost"><Icon name="download" size={11} /> &nbsp;Export JSON</button>}>
+              <KumoButton variant="ghost"><Icon name="download" size={11} /> &nbsp;Export JSON</KumoButton>
+            </Suspense>
+            <Suspense fallback={<button className="btn ghost"><Icon name="download" size={11} /> &nbsp;Export CSV</button>}>
+              <KumoButton variant="ghost"><Icon name="download" size={11} /> &nbsp;Export CSV</KumoButton>
+            </Suspense>
+            <Suspense fallback={<button className="btn"><Icon name="globe" size={11} /> &nbsp;API key</button>}>
+              <KumoButton><Icon name="globe" size={11} /> &nbsp;API key</KumoButton>
+            </Suspense>
           </div>
         </div>
 
@@ -282,9 +290,13 @@ export default function DashboardPage() {
                   </div>
                 ))}
               </div>
-              <button className="btn ghost" style={{ width: '100%', marginTop: 12, fontSize: 11 }}>
+              <Suspense fallback={<button className="btn ghost" style={{ width: '100%', marginTop: 12, fontSize: 11 }}>
                 <Icon name="plus" size={10} /> &nbsp;Authorize new integration
-              </button>
+              </button>}>
+                <KumoButton variant="ghost" style={{ width: '100%', marginTop: 12, fontSize: 11 }}>
+                  <Icon name="plus" size={10} /> &nbsp;Authorize new integration
+                </KumoButton>
+              </Suspense>
             </div>
 
             <div style={{ marginTop: 26 }}>

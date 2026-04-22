@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useRef, useState } from 'react'
+import { useCallback, useEffect, useRef, useState, Suspense } from 'react'
 import { useNavigate, useParams } from 'react-router-dom'
 import { useTranslation } from 'react-i18next'
 import { Icon } from '../components/mtr/primitives'
@@ -15,6 +15,11 @@ const KumoDialog = React.lazy(() =>
 const KumoTooltip = React.lazy(() =>
   import('@cloudflare/kumo').then((m) => ({
     default: m.Tooltip as unknown as React.ComponentType<any>,
+  }))
+)
+const KumoButton = React.lazy(() =>
+  import('@cloudflare/kumo').then((m) => ({
+    default: m.Button as unknown as React.ComponentType<any>,
   }))
 )
 
@@ -191,9 +196,11 @@ export default function BookReaderPage() {
         <div className="display" style={{ fontSize: 24 }}>
           {error || 'Book not found'}
         </div>
-        <button className="btn ghost" style={{ marginTop: 20 }} onClick={() => navigate('/')}>
-          Back to home
-        </button>
+        <Suspense fallback={<button className="btn ghost" style={{ marginTop: 20 }} onClick={() => navigate('/')}>Back to home</button>}>
+          <KumoButton variant="ghost" style={{ marginTop: 20 }} onClick={() => navigate('/')}>
+            Back to home
+          </KumoButton>
+        </Suspense>
       </div>
     )
   }
@@ -510,30 +517,59 @@ export default function BookReaderPage() {
                     borderTop: '1px solid var(--rule)',
                   }}
                 >
-                  <button
-                    className="btn ghost"
-                    disabled={(currentChapter.idx ?? 0) <= 0}
-                    onClick={() => {
-                      const prev = book.chapters.find(
-                        (c) => c.idx === (currentChapter.idx ?? 0) - 1,
-                      )
-                      if (prev) void loadChapter(prev)
-                    }}
-                  >
-                    <Icon name="left" size={12} /> Previous
-                  </button>
-                  <button
-                    className="btn accent"
-                    disabled={(currentChapter.idx ?? 0) >= book.chapters.length - 1}
-                    onClick={() => {
-                      const next = book.chapters.find(
-                        (c) => c.idx === (currentChapter.idx ?? 0) + 1,
-                      )
-                      if (next) void loadChapter(next)
-                    }}
-                  >
-                    Next <Icon name="right" size={12} />
-                  </button>
+                  <Suspense fallback={
+                    <button
+                      className="btn ghost"
+                      disabled={(currentChapter.idx ?? 0) <= 0}
+                      onClick={() => {
+                        const prev = book.chapters.find(
+                          (c) => c.idx === (currentChapter.idx ?? 0) - 1,
+                        )
+                        if (prev) void loadChapter(prev)
+                      }}
+                    >
+                      <Icon name="left" size={12} /> Previous
+                    </button>
+                  }>
+                    <KumoButton
+                      variant="ghost"
+                      disabled={(currentChapter.idx ?? 0) <= 0}
+                      onClick={() => {
+                        const prev = book.chapters.find(
+                          (c) => c.idx === (currentChapter.idx ?? 0) - 1,
+                        )
+                        if (prev) void loadChapter(prev)
+                      }}
+                    >
+                      <Icon name="left" size={12} /> Previous
+                    </KumoButton>
+                  </Suspense>
+                  <Suspense fallback={
+                    <button
+                      className="btn accent"
+                      disabled={(currentChapter.idx ?? 0) >= book.chapters.length - 1}
+                      onClick={() => {
+                        const next = book.chapters.find(
+                          (c) => c.idx === (currentChapter.idx ?? 0) + 1,
+                        )
+                        if (next) void loadChapter(next)
+                      }}
+                    >
+                      Next <Icon name="right" size={12} />
+                    </button>
+                  }>
+                    <KumoButton
+                      disabled={(currentChapter.idx ?? 0) >= book.chapters.length - 1}
+                      onClick={() => {
+                        const next = book.chapters.find(
+                          (c) => c.idx === (currentChapter.idx ?? 0) + 1,
+                        )
+                        if (next) void loadChapter(next)
+                      }}
+                    >
+                      Next <Icon name="right" size={12} />
+                    </KumoButton>
+                  </Suspense>
                 </div>
               </>
             ) : (
@@ -665,24 +701,47 @@ export default function BookReaderPage() {
                 style={{ fontFamily: 'var(--font-body)' }}
               />
               <div style={{ display: 'flex', gap: 8, marginTop: 10 }}>
-                <button
-                  className="btn accent"
-                  style={{ flex: 1, justifyContent: 'center' }}
-                  onClick={handleCreateAnnotation}
-                >
-                  Save
-                </button>
-                <button
-                  className="btn ghost"
-                  style={{ flex: 1, justifyContent: 'center' }}
-                  onClick={() => {
-                    setShowAnnotationPanel(false)
-                    setSelectedText('')
-                    window.getSelection()?.removeAllRanges()
-                  }}
-                >
-                  Cancel
-                </button>
+                <Suspense fallback={
+                  <button
+                    className="btn accent"
+                    style={{ flex: 1, justifyContent: 'center' }}
+                    onClick={handleCreateAnnotation}
+                  >
+                    Save
+                  </button>
+                }>
+                  <KumoButton
+                    style={{ flex: 1, justifyContent: 'center' }}
+                    onClick={handleCreateAnnotation}
+                  >
+                    Save
+                  </KumoButton>
+                </Suspense>
+                <Suspense fallback={
+                  <button
+                    className="btn ghost"
+                    style={{ flex: 1, justifyContent: 'center' }}
+                    onClick={() => {
+                      setShowAnnotationPanel(false)
+                      setSelectedText('')
+                      window.getSelection()?.removeAllRanges()
+                    }}
+                  >
+                    Cancel
+                  </button>
+                }>
+                  <KumoButton
+                    variant="ghost"
+                    style={{ flex: 1, justifyContent: 'center' }}
+                    onClick={() => {
+                      setShowAnnotationPanel(false)
+                      setSelectedText('')
+                      window.getSelection()?.removeAllRanges()
+                    }}
+                  >
+                    Cancel
+                  </KumoButton>
+                </Suspense>
               </div>
             </div>
           )}

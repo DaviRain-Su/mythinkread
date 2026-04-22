@@ -55,15 +55,15 @@ export default function BooklistDetailPage() {
   return (
     <div style={{ maxWidth: '72rem', margin: '0 auto', padding: '2rem 1rem' }}>
       {/* Booklist Info */}
-      <div style={{ backgroundColor: 'white', borderRadius: '0.75rem', padding: '2rem', marginBottom: '2rem' }}>
-        <h1 style={{ fontSize: '1.875rem', fontWeight: 'bold', marginBottom: '0.5rem' }}>
+      <div style={{ backgroundColor: 'var(--paper)', borderRadius: '2px', padding: '2rem', marginBottom: '2rem' }}>
+        <h1 className="display" style={{ fontSize: '1.875rem', fontWeight: 500, marginBottom: '0.5rem' }}>
           {booklist.title}
         </h1>
-        <p style={{ color: '#6b7280', marginBottom: '1rem' }}>
+        <p style={{ color: 'var(--ink-3)', marginBottom: '1rem' }}>
           by {booklist.username} · {booklist.item_count} 本书
         </p>
         {booklist.description && (
-          <p style={{ color: '#374151', lineHeight: 1.6 }}>{booklist.description}</p>
+          <p style={{ color: 'var(--ink-2)', lineHeight: 1.6 }}>{booklist.description}</p>
         )}
       </div>
 
@@ -78,9 +78,9 @@ export default function BooklistDetailPage() {
               alignItems: 'center',
               gap: '1rem',
               padding: '1rem',
-              backgroundColor: 'white',
-              borderRadius: '0.75rem',
-              border: '1px solid #e5e7eb',
+              backgroundColor: 'var(--paper)',
+              borderRadius: '2px',
+              border: '1px solid var(--rule)',
               cursor: 'pointer'
             }}
           >
@@ -91,22 +91,22 @@ export default function BooklistDetailPage() {
               alignItems: 'center',
               justifyContent: 'center',
               borderRadius: '0.5rem',
-              backgroundColor: '#f3f4f6',
-              color: '#6b7280',
-              fontWeight: 'bold'
+              backgroundColor: 'var(--paper-2)',
+              color: 'var(--ink-3)',
+              fontWeight: 500
             }}>
               {item.idx + 1}
             </div>
             <div style={{ flex: 1 }}>
               <h3 style={{ fontWeight: 600, marginBottom: '0.25rem' }}>{item.book_title}</h3>
-              <p style={{ fontSize: '0.875rem', color: '#6b7280' }}>{item.author}</p>
+              <p style={{ fontSize: '0.875rem', color: 'var(--ink-3)' }}>{item.author}</p>
             </div>
           </div>
         ))}
       </div>
 
       {booklist.items.length === 0 && (
-        <div style={{ textAlign: 'center', padding: '3rem', color: '#6b7280' }}>
+        <div style={{ textAlign: 'center', padding: '3rem', color: 'var(--ink-3)' }}>
           书单为空
         </div>
       )}

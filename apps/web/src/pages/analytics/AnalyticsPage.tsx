@@ -60,17 +60,16 @@ export default function AnalyticsPage() {
   return (
     <div style={{ maxWidth: '72rem', margin: '0 auto', padding: '2rem 1rem' }}>
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '2rem' }}>
-        <h1 style={{ fontSize: '1.5rem', fontWeight: 'bold' }}>
+        <h1 className="display" style={{ fontSize: '1.5rem', fontWeight: 500 }}>
           数据分析
         </h1>
         <select
           value={days}
           onChange={(e) => setDays(Number(e.target.value))}
+          className="mtr-input"
           style={{
             padding: '0.5rem 1rem',
-            border: '1px solid #e5e7eb',
-            borderRadius: '0.5rem',
-            backgroundColor: 'white'
+            fontSize: '0.875rem'
           }}
         >
           <option value={7}>最近7天</option>
@@ -88,23 +87,23 @@ export default function AnalyticsPage() {
           marginBottom: '2rem'
         }}>
           {[
-            { label: '新用户', value: stats.new_users, color: '#2563eb' },
-            { label: '活跃读者', value: stats.active_readers, color: '#059669' },
-            { label: '总阅读', value: stats.total_reads, color: '#d97706' },
-            { label: '新书籍', value: stats.new_books, color: '#dc2626' },
-            { label: '新评论', value: stats.new_comments, color: '#7c3aed' },
-            { label: '平均评分', value: stats.avg_rating, color: '#db2777' }
+            { label: '新用户', value: stats.new_users, color: 'var(--accent)' },
+            { label: '活跃读者', value: stats.active_readers, color: 'var(--moss)' },
+            { label: '总阅读', value: stats.total_reads, color: 'var(--gold)' },
+            { label: '新书籍', value: stats.new_books, color: 'var(--terracotta)' },
+            { label: '新评论', value: stats.new_comments, color: 'var(--indigo)' },
+            { label: '平均评分', value: stats.avg_rating, color: 'var(--crimson)' }
           ].map((stat) => (
             <div key={stat.label} style={{
               padding: '1.5rem',
-              backgroundColor: 'white',
-              borderRadius: '0.75rem',
-              border: '1px solid #e5e7eb'
+              background: 'var(--paper)',
+              borderRadius: '2px',
+              border: '1px solid var(--rule)'
             }}>
               <div style={{ fontSize: '1.875rem', fontWeight: 'bold', color: stat.color }}>
                 {stat.value}
               </div>
-              <div style={{ fontSize: '0.875rem', color: '#6b7280', marginTop: '0.25rem' }}>
+              <div style={{ fontSize: '0.875rem', color: 'var(--ink-3)', marginTop: '0.25rem' }}>
                 {stat.label}
               </div>
             </div>
@@ -114,7 +113,7 @@ export default function AnalyticsPage() {
 
       {/* Top Books */}
       {stats?.top_books && stats.top_books.length > 0 && (
-        <div style={{ backgroundColor: 'white', borderRadius: '0.75rem', padding: '1.5rem', marginBottom: '2rem' }}>
+        <div style={{ background: 'var(--paper)', borderRadius: '2px', padding: '1.5rem', marginBottom: '2rem', border: '1px solid var(--rule)' }}>
           <h2 style={{ fontSize: '1.125rem', fontWeight: 600, marginBottom: '1rem' }}>
             热门书籍
           </h2>
@@ -125,8 +124,8 @@ export default function AnalyticsPage() {
                 alignItems: 'center',
                 gap: '1rem',
                 padding: '0.75rem',
-                borderRadius: '0.5rem',
-                backgroundColor: '#f9fafb'
+                borderRadius: '2px',
+                background: 'var(--paper-2)'
               }}>
                 <div style={{
                   width: '2rem',
@@ -134,18 +133,18 @@ export default function AnalyticsPage() {
                   display: 'flex',
                   alignItems: 'center',
                   justifyContent: 'center',
-                  borderRadius: '0.5rem',
-                  backgroundColor: index < 3 ? '#fef3c7' : '#f3f4f6',
-                  color: index < 3 ? '#92400e' : '#6b7280',
+                  borderRadius: '2px',
+                  background: index < 3 ? 'var(--accent)' : 'var(--paper-3)',
+                  color: index < 3 ? 'var(--accent-ink)' : 'var(--ink-3)',
                   fontWeight: 'bold'
                 }}>
                   {index + 1}
                 </div>
                 <div style={{ flex: 1 }}>
-                  <div style={{ fontWeight: 500 }}>{book.title}</div>
-                  <div style={{ fontSize: '0.875rem', color: '#6b7280' }}>{book.creator_name}</div>
+                  <div style={{ fontWeight: 500, color: 'var(--ink)' }}>{book.title}</div>
+                  <div style={{ fontSize: '0.875rem', color: 'var(--ink-3)' }}>{book.creator_name}</div>
                 </div>
-                <div style={{ textAlign: 'right', fontSize: '0.875rem', color: '#6b7280' }}>
+                <div style={{ textAlign: 'right', fontSize: '0.875rem', color: 'var(--ink-3)' }}>
                   <div>👁 {book.read_count}</div>
                   <div>⭐ {book.rating_avg?.toFixed(1)}</div>
                 </div>
@@ -157,27 +156,27 @@ export default function AnalyticsPage() {
 
       {/* Daily Stats Chart */}
       {stats?.daily_stats && stats.daily_stats.length > 0 && (
-        <div style={{ backgroundColor: 'white', borderRadius: '0.75rem', padding: '1.5rem' }}>
+        <div style={{ background: 'var(--paper)', borderRadius: '2px', padding: '1.5rem', border: '1px solid var(--rule)' }}>
           <h2 style={{ fontSize: '1.125rem', fontWeight: 600, marginBottom: '1rem' }}>
             每日增长
           </h2>
           <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
             {stats.daily_stats.slice(0, 14).map((day) => (
               <div key={day.date} style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
-                <div style={{ width: '6rem', fontSize: '0.875rem', color: '#6b7280' }}>
+                <div style={{ width: '6rem', fontSize: '0.875rem', color: 'var(--ink-3)' }}>
                   {day.date}
                 </div>
                 <div style={{ flex: 1, display: 'flex', gap: '0.5rem' }}>
                   <div style={{
                     width: `${Math.min(day.new_users * 10, 100)}%`,
                     height: '1.5rem',
-                    backgroundColor: '#dbeafe',
-                    borderRadius: '0.25rem',
+                    background: 'var(--paper-2)',
+                    borderRadius: '2px',
                     display: 'flex',
                     alignItems: 'center',
                     justifyContent: 'center',
                     fontSize: '0.75rem',
-                    color: '#2563eb'
+                    color: 'var(--accent)'
                   }}>
                     {day.new_users > 0 ? `+${day.new_users}` : ''}
                   </div>

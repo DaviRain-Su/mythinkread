@@ -1,5 +1,13 @@
 import { useState } from 'react'
 import { Icon } from '../../components/mtr/primitives'
+import React, { Suspense } from 'react'
+
+// Kumo UI Button (lazy loaded)
+const KumoButton = React.lazy(() =>
+  import('@cloudflare/kumo').then((m) => ({
+    default: m.Button as unknown as React.ComponentType<any>,
+  }))
+)
 
 const EDIT_BREAKDOWN = [
   ['Insertions', '+18,240 words', 'oklch(0.60 0.11 148)', 44],
@@ -153,9 +161,18 @@ export default function PublishGatePage() {
               <div className="cjk" style={{ fontSize: 12, marginTop: 8, opacity: 0.85 }}>
                 {passing ? '可以作为轻度人机协作发布' : '修改率未达到 20% 门槛'}
               </div>
-              <button className="btn" style={{ marginTop: 16, background: '#fff', color: 'var(--ink)', fontSize: 12 }} disabled={!passing}>
-                {passing ? 'Mint to IPFS + Arweave' : '—'}
-              </button>
+              <Suspense fallback={
+                <button className="btn" style={{ marginTop: 16, background: '#fff', color: 'var(--ink)', fontSize: 12 }} disabled={!passing}>
+                  {passing ? 'Mint to IPFS + Arweave' : '—'}
+                </button>
+              }>
+                <KumoButton
+                  style={{ marginTop: 16, background: '#fff', color: 'var(--ink)', fontSize: 12 }}
+                  disabled={!passing}
+                >
+                  {passing ? 'Mint to IPFS + Arweave' : '—'}
+                </KumoButton>
+              </Suspense>
             </div>
 
             <div>

@@ -1,5 +1,13 @@
 import { useState } from 'react'
 import { Icon } from '../../components/mtr/primitives'
+import React, { Suspense } from 'react'
+
+// Kumo UI Button (lazy loaded)
+const KumoButton = React.lazy(() =>
+  import('@cloudflare/kumo').then((m) => ({
+    default: m.Button as unknown as React.ComponentType<any>,
+  }))
+)
 
 const STEPS = 5
 
@@ -108,10 +116,14 @@ export default function OnboardingPage() {
           <div style={{ flex: 1 }} />
 
           <div style={{ marginTop: 36, display: 'flex', alignItems: 'center', gap: 14 }}>
-            <button className="btn ghost">← Back</button>
+            <Suspense fallback={<button className="btn ghost">← Back</button>}>
+              <KumoButton variant="ghost">← Back</KumoButton>
+            </Suspense>
             <div style={{ flex: 1 }} />
             <div className="mono" style={{ fontSize: 10, color: 'var(--ink-3)' }}>AUTOSAVED · Creator profile @your_handle</div>
-            <button className="btn accent">Continue · pick your first book →</button>
+            <Suspense fallback={<button className="btn accent">Continue · pick your first book →</button>}>
+              <KumoButton>Continue · pick your first book →</KumoButton>
+            </Suspense>
           </div>
         </section>
       </div>

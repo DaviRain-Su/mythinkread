@@ -83,71 +83,57 @@ export default function BlogSettingsPage() {
 
   return (
     <div style={{ maxWidth: '48rem', margin: '0 auto', padding: '2rem 1rem' }}>
-      <h1 style={{ fontSize: '1.5rem', fontWeight: 'bold', marginBottom: '2rem' }}>
+      <h1 className="display" style={{ fontSize: '1.5rem', fontWeight: 500, marginBottom: '2rem' }}>
         博客设置
       </h1>
 
       {config && (
         <div style={{ display: 'flex', flexDirection: 'column', gap: '1.5rem' }}>
-          <div style={{ backgroundColor: 'white', borderRadius: '0.75rem', padding: '1.5rem' }}>
+          <div style={{ background: 'var(--paper)', borderRadius: '2px', padding: '1.5rem', border: '1px solid var(--rule)' }}>
             <h2 style={{ fontSize: '1.125rem', fontWeight: 600, marginBottom: '1rem' }}>
               基本信息
             </h2>
             <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
               <div>
-                <label style={{ display: 'block', fontSize: '0.875rem', fontWeight: 500, marginBottom: '0.5rem' }}>
+                <label style={{ display: 'block', fontSize: '0.875rem', fontWeight: 500, marginBottom: '0.5rem', color: 'var(--ink)' }}>
                   博客标题
                 </label>
                 <input
                   type="text"
                   value={config.title || ''}
                   onChange={(e) => setConfig({ ...config, title: e.target.value })}
-                  style={{
-                    width: '100%',
-                    padding: '0.75rem',
-                    border: '1px solid #e5e7eb',
-                    borderRadius: '0.5rem'
-                  }}
+                  className="mtr-input"
+                  style={{ width: '100%', padding: '0.75rem' }}
                 />
               </div>
               <div>
-                <label style={{ display: 'block', fontSize: '0.875rem', fontWeight: 500, marginBottom: '0.5rem' }}>
+                <label style={{ display: 'block', fontSize: '0.875rem', fontWeight: 500, marginBottom: '0.5rem', color: 'var(--ink)' }}>
                   博客描述
                 </label>
                 <textarea
                   value={config.description || ''}
                   onChange={(e) => setConfig({ ...config, description: e.target.value })}
                   rows={3}
-                  style={{
-                    width: '100%',
-                    padding: '0.75rem',
-                    border: '1px solid #e5e7eb',
-                    borderRadius: '0.5rem',
-                    resize: 'vertical'
-                  }}
+                  className="mtr-input"
+                  style={{ width: '100%', padding: '0.75rem', resize: 'vertical' }}
                 />
               </div>
               <div>
-                <label style={{ display: 'block', fontSize: '0.875rem', fontWeight: 500, marginBottom: '0.5rem' }}>
+                <label style={{ display: 'block', fontSize: '0.875rem', fontWeight: 500, marginBottom: '0.5rem', color: 'var(--ink)' }}>
                   子域名
                 </label>
                 <input
                   type="text"
                   value={config.subdomain || ''}
                   disabled
-                  style={{
-                    width: '100%',
-                    padding: '0.75rem',
-                    border: '1px solid #e5e7eb',
-                    borderRadius: '0.5rem',
-                    backgroundColor: '#f9fafb'
-                  }}
+                  className="mtr-input"
+                  style={{ width: '100%', padding: '0.75rem', background: 'var(--paper-2)' }}
                 />
               </div>
             </div>
           </div>
 
-          <div style={{ backgroundColor: 'white', borderRadius: '0.75rem', padding: '1.5rem' }}>
+          <div style={{ background: 'var(--paper)', borderRadius: '2px', padding: '1.5rem', border: '1px solid var(--rule)' }}>
             <h2 style={{ fontSize: '1.125rem', fontWeight: 600, marginBottom: '1rem' }}>
               自动发布设置
             </h2>
@@ -173,12 +159,10 @@ export default function BlogSettingsPage() {
             <button
               onClick={handleSave}
               disabled={saving}
+              className="btn accent"
               style={{
                 padding: '0.75rem 1.5rem',
-                backgroundColor: saving ? '#9ca3af' : '#2563eb',
-                color: 'white',
-                border: 'none',
-                borderRadius: '0.5rem',
+                opacity: saving ? 0.5 : 1,
                 cursor: saving ? 'not-allowed' : 'pointer'
               }}
             >
@@ -186,13 +170,9 @@ export default function BlogSettingsPage() {
             </button>
             <button
               onClick={handleGenerate}
+              className="btn"
               style={{
-                padding: '0.75rem 1.5rem',
-                backgroundColor: '#059669',
-                color: 'white',
-                border: 'none',
-                borderRadius: '0.5rem',
-                cursor: 'pointer'
+                padding: '0.75rem 1.5rem'
               }}
             >
               生成博客文章

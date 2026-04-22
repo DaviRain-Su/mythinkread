@@ -1,5 +1,14 @@
 import { useState } from 'react'
 
+import React, { Suspense } from 'react'
+
+// Kumo UI Button (lazy loaded)
+const KumoButton = React.lazy(() =>
+  import('@cloudflare/kumo').then((m) => ({
+    default: m.Button as unknown as React.ComponentType<any>,
+  }))
+)
+
 const EDITORS = [
   ['M', '#8a5f3a'],
   ['T', '#2d3a52'],
@@ -153,15 +162,15 @@ export default function WikiCoEditPage() {
                 </span>
               </p>
               <div style={{ display: 'flex', gap: 6, marginTop: 10 }}>
-                <button className="btn" style={{ fontSize: 10, padding: '3px 10px' }}>
-                  Accept
-                </button>
-                <button className="btn ghost" style={{ fontSize: 10, padding: '3px 10px' }}>
-                  Discuss
-                </button>
-                <button className="btn ghost" style={{ fontSize: 10, padding: '3px 10px' }}>
-                  Reject
-                </button>
+                <Suspense fallback={<button className="btn" style={{ fontSize: 10, padding: '3px 10px' }}>Accept</button>}>
+                  <KumoButton style={{ fontSize: 10, padding: '3px 10px' }}>Accept</KumoButton>
+                </Suspense>
+                <Suspense fallback={<button className="btn ghost" style={{ fontSize: 10, padding: '3px 10px' }}>Discuss</button>}>
+                  <KumoButton variant="ghost" style={{ fontSize: 10, padding: '3px 10px' }}>Discuss</KumoButton>
+                </Suspense>
+                <Suspense fallback={<button className="btn ghost" style={{ fontSize: 10, padding: '3px 10px' }}>Reject</button>}>
+                  <KumoButton variant="ghost" style={{ fontSize: 10, padding: '3px 10px' }}>Reject</KumoButton>
+                </Suspense>
                 <div style={{ flex: 1 }} />
                 <span className="mono" style={{ fontSize: 9, color: 'var(--ink-3)' }}>
                   2 agree · 1 dissent
@@ -265,12 +274,12 @@ export default function WikiCoEditPage() {
                 </div>
               </div>
               <div style={{ display: 'flex', gap: 6, marginTop: 10 }}>
-                <button className="btn ghost" style={{ fontSize: 10, padding: '3px 10px' }}>
-                  Reply…
-                </button>
-                <button className="btn ghost" style={{ fontSize: 10, padding: '3px 10px' }}>
-                  Resolve
-                </button>
+                <Suspense fallback={<button className="btn ghost" style={{ fontSize: 10, padding: '3px 10px' }}>Reply…</button>}>
+                  <KumoButton variant="ghost" style={{ fontSize: 10, padding: '3px 10px' }}>Reply…</KumoButton>
+                </Suspense>
+                <Suspense fallback={<button className="btn ghost" style={{ fontSize: 10, padding: '3px 10px' }}>Resolve</button>}>
+                  <KumoButton variant="ghost" style={{ fontSize: 10, padding: '3px 10px' }}>Resolve</KumoButton>
+                </Suspense>
               </div>
             </div>
 
@@ -357,9 +366,13 @@ export default function WikiCoEditPage() {
             <p style={{ margin: '8px 0 10px', fontSize: 12, color: 'var(--ink-2)', lineHeight: 1.5 }}>
               Changes merge after <strong>3 approvals</strong> or <strong>48h without dissent</strong>. Full history signed to IPFS.
             </p>
-            <button className="btn ghost" style={{ width: '100%', fontSize: 11 }}>
+            <Suspense fallback={<button className="btn ghost" style={{ width: '100%', fontSize: 11 }}>
               Change governance
-            </button>
+            </button>}>
+              <KumoButton variant="ghost" style={{ width: '100%', fontSize: 11 }}>
+                Change governance
+              </KumoButton>
+            </Suspense>
           </div>
         </aside>
       </div>

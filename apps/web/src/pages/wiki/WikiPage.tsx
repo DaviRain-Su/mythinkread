@@ -2,12 +2,17 @@ import { useState } from 'react'
 import { Icon, formatCID } from '../../components/mtr/primitives'
 import { useTranslation } from 'react-i18next'
 import WikiGraph3D from '../../components/mtr/WikiGraph3D'
-import React from 'react'
+import React, { Suspense } from 'react'
 
-// Kumo UI Date Picker (lazy loaded)
+// Kumo UI components (lazy loaded)
 const DatePicker = React.lazy(() =>
   import('@cloudflare/kumo').then((m) => ({
     default: m.DatePicker as unknown as React.ComponentType<any>,
+  }))
+)
+const KumoButton = React.lazy(() =>
+  import('@cloudflare/kumo').then((m) => ({
+    default: m.Button as unknown as React.ComponentType<any>,
   }))
 )
 
@@ -97,16 +102,18 @@ export default function WikiPage() {
             </div>
           ))}
 
-          <button className="btn ghost" style={{ width: '100%', marginTop: 12, fontSize: 11 }}>
-            <Icon name="download" size={10} /> &nbsp;{t('wiki.exportToObsidian')}
-          </button>
-          <button
-            className="btn ghost"
-            style={{ width: '100%', marginTop: 8, fontSize: 11 }}
-            onClick={() => setShowDatePicker(true)}
-          >
+          <Suspense fallback={<button className="btn ghost" style={{ width: '100%', marginTop: 12, fontSize: 11 }}><Icon name="download" size={10} /> &nbsp;{t('wiki.exportToObsidian')}</button>}>
+            <KumoButton variant="ghost" style={{ width: '100%', marginTop: 12, fontSize: 11 }}>
+              <Icon name="download" size={10} /> &nbsp;{t('wiki.exportToObsidian')}
+            </KumoButton>
+          </Suspense>
+          <Suspense fallback={<button className="btn ghost" style={{ width: '100%', marginTop: 8, fontSize: 11 }} onClick={() => setShowDatePicker(true)}>
             <Icon name="calendar" size={10} /> &nbsp;{t('wiki.timelineDate')}
-          </button>
+          </button>}>
+            <KumoButton variant="ghost" style={{ width: '100%', marginTop: 8, fontSize: 11 }} onClick={() => setShowDatePicker(true)}>
+              <Icon name="calendar" size={10} /> &nbsp;{t('wiki.timelineDate')}
+            </KumoButton>
+          </Suspense>
           {showDatePicker && (
             <React.Suspense fallback={<div style={{ height: 40, background: 'var(--paper-2)', borderRadius: 2, marginTop: 8 }} />}>
               <DatePicker
@@ -119,10 +126,7 @@ export default function WikiPage() {
               />
             </React.Suspense>
           )}
-          <button
-            className="btn accent"
-            style={{ width: '100%', marginTop: 8, fontSize: 11 }}
-            onClick={() => {
+          <Suspense fallback={<button className="btn accent" style={{ width: '100%', marginTop: 8, fontSize: 11 }} onClick={() => {
               const token = localStorage.getItem('mtr_token')
               fetch('/api/fsrs/cards', {
                 method: 'POST',
@@ -143,7 +147,29 @@ export default function WikiPage() {
             }}
           >
             <Icon name="sparkle" size={10} /> &nbsp;{t('wiki.addToSRS')}
-          </button>
+          </button>}>
+            <KumoButton style={{ width: '100%', marginTop: 8, fontSize: 11 }} onClick={() => {
+              const token = localStorage.getItem('mtr_token')
+              fetch('/api/fsrs/cards', {
+                method: 'POST',
+                headers: {
+                  'Content-Type': 'application/json',
+                  Authorization: `Bearer ${token}`,
+                },
+                body: JSON.stringify({
+                  source_type: 'wiki',
+                  source_id: `${selectedDir}${selectedItem}`,
+                  front: selectedItem,
+                  back: `Wiki concept from ${selectedDir}`,
+                  context: `${selectedDir}${selectedItem}`,
+                }),
+              })
+                .then(() => alert(t('wiki.addedToCards')))
+                .catch(console.error)
+            }}>
+              <Icon name="sparkle" size={10} /> &nbsp;{t('wiki.addToSRS')}
+            </KumoButton>
+          </Suspense>
         </aside>
 
         {/* Main content */}

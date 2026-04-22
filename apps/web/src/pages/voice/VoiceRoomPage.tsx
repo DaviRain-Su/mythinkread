@@ -1,5 +1,13 @@
 import { useState } from 'react'
 import { Icon } from '../../components/mtr/primitives'
+import React, { Suspense } from 'react'
+
+// Kumo UI Button (lazy loaded)
+const KumoButton = React.lazy(() =>
+  import('@cloudflare/kumo').then((m) => ({
+    default: m.Button as unknown as React.ComponentType<any>,
+  }))
+)
 
 const SPEAKERS = [
   { n: 'Ma Xiaonan', zh: '马小南', color: '#8a5f3a', speaking: true, role: 'host' },
@@ -300,9 +308,11 @@ export default function VoiceRoomPage() {
             >
               Say something…
             </div>
-            <button className="btn" style={{ background: 'oklch(0.72 0.13 85)', color: 'var(--ink)', border: 0, fontSize: 11 }}>
-              Send
-            </button>
+            <Suspense fallback={<button className="btn" style={{ background: 'oklch(0.72 0.13 85)', color: 'var(--ink)', border: 0, fontSize: 11 }}>Send</button>}>
+              <KumoButton style={{ background: 'oklch(0.72 0.13 85)', color: 'var(--ink)', border: 0, fontSize: 11 }}>
+                Send
+              </KumoButton>
+            </Suspense>
           </div>
         </aside>
       </div>

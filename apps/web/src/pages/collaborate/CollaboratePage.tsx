@@ -146,13 +146,13 @@ export default function CollaboratePage() {
     <div style={{ maxWidth: '72rem', margin: '0 auto', padding: '2rem 1rem' }}>
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.5rem' }}>
         <div>
-          <h1 style={{ fontSize: '1.5rem', fontWeight: 'bold' }}>{doc.title}</h1>
-          <p style={{ fontSize: '0.875rem', color: '#6b7280' }}>
+          <h1 className="display" style={{ fontSize: '1.5rem', fontWeight: 500 }}>{doc.title}</h1>
+          <p style={{ fontSize: '0.875rem', color: 'var(--ink-3)' }}>
             创建者: {doc.creator_name} · 版本: {version}
           </p>
         </div>
         <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-          {saving && <span style={{ fontSize: '0.875rem', color: '#6b7280' }}>同步中...</span>}
+          {saving && <span style={{ fontSize: '0.875rem', color: 'var(--ink-3)' }}>同步中...</span>}
           <div style={{ display: 'flex', gap: '-0.5rem' }}>
             {doc.collaborators?.map((c) => (
               <div
@@ -162,14 +162,14 @@ export default function CollaboratePage() {
                   width: '2rem',
                   height: '2rem',
                   borderRadius: '50%',
-                  backgroundColor: '#2563eb',
-                  color: 'white',
+                  background: 'var(--accent)',
+                  color: 'var(--accent-ink)',
                   display: 'flex',
                   alignItems: 'center',
                   justifyContent: 'center',
                   fontSize: '0.75rem',
                   fontWeight: 'bold',
-                  border: '2px solid white'
+                  border: '2px solid var(--paper)'
                 }}
               >
                 {(c.display_name || c.username)[0].toUpperCase()}
@@ -179,22 +179,20 @@ export default function CollaboratePage() {
         </div>
       </div>
 
-      <div style={{ backgroundColor: 'white', borderRadius: '0.75rem', border: '1px solid #e5e7eb' }}>
+      <div style={{ background: 'var(--paper)', borderRadius: '2px', border: '1px solid var(--rule)' }}>
         <textarea
           ref={textareaRef}
           value={content}
           onChange={handleContentChange}
+          className="mtr-input"
           style={{
             width: '100%',
             minHeight: '60vh',
             padding: '1.5rem',
-            border: 'none',
-            borderRadius: '0.75rem',
             fontSize: '1rem',
             lineHeight: 1.8,
             resize: 'vertical',
-            outline: 'none',
-            fontFamily: 'system-ui, -apple-system, sans-serif'
+            fontFamily: 'var(--font-body)'
           }}
           placeholder="开始协作编辑..."
         />

@@ -52,9 +52,9 @@ export default function RecommendationsPage() {
       onClick={() => navigate(`/books/${book.id}`)}
       style={{
         padding: '1rem',
-        backgroundColor: 'white',
-        borderRadius: '0.75rem',
-        border: '1px solid #e5e7eb',
+        background: 'var(--paper)',
+        borderRadius: '2px',
+        border: '1px solid var(--rule)',
         cursor: 'pointer',
         transition: 'box-shadow 0.2s'
       }}
@@ -65,15 +65,15 @@ export default function RecommendationsPage() {
         e.currentTarget.style.boxShadow = 'none'
       }}
     >
-      <h3 style={{ fontWeight: 600, marginBottom: '0.5rem', fontSize: '1rem' }}>
+      <h3 style={{ fontWeight: 600, marginBottom: '0.5rem', fontSize: '1rem', color: 'var(--ink)' }}>
         {book.title}
       </h3>
-      <p style={{ fontSize: '0.875rem', color: '#6b7280', marginBottom: '0.5rem' }}>
+      <p style={{ fontSize: '0.875rem', color: 'var(--ink-3)', marginBottom: '0.5rem' }}>
         {book.author}
       </p>
       <p style={{
         fontSize: '0.875rem',
-        color: '#374151',
+        color: 'var(--ink-2)',
         lineHeight: 1.5,
         marginBottom: '0.75rem',
         display: '-webkit-box',
@@ -83,7 +83,7 @@ export default function RecommendationsPage() {
       }}>
         {book.description || '暂无简介'}
       </p>
-      <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.875rem', color: '#9ca3af' }}>
+      <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.875rem', color: 'var(--ink-4)' }}>
         <span>⭐ {book.rating_avg?.toFixed(1) || '0.0'}</span>
         <span>👁 {book.read_count || 0}</span>
       </div>
@@ -96,7 +96,7 @@ export default function RecommendationsPage() {
 
   return (
     <div style={{ maxWidth: '72rem', margin: '0 auto', padding: '2rem 1rem' }}>
-      <h1 style={{ fontSize: '1.5rem', fontWeight: 'bold', marginBottom: '2rem' }}>
+      <h1 className="display" style={{ fontSize: '1.5rem', fontWeight: 500, marginBottom: '2rem' }}>
         推荐
       </h1>
 

@@ -53,7 +53,7 @@ export default function FeedPage() {
 
   return (
     <div style={{ maxWidth: '48rem', margin: '0 auto', padding: '2rem 1rem' }}>
-      <h1 style={{ fontSize: '1.5rem', fontWeight: 'bold', marginBottom: '1.5rem' }}>
+      <h1 className="display" style={{ fontSize: '1.5rem', fontWeight: 500, marginBottom: '1.5rem' }}>
         动态
       </h1>
 
@@ -63,9 +63,9 @@ export default function FeedPage() {
             key={activity.id}
             style={{
               padding: '1.25rem',
-              backgroundColor: 'white',
-              borderRadius: '0.75rem',
-              border: '1px solid #e5e7eb'
+              background: 'var(--paper)',
+              borderRadius: '2px',
+              border: '1px solid var(--rule)'
             }}
           >
             <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', marginBottom: '0.5rem' }}>
@@ -73,37 +73,37 @@ export default function FeedPage() {
                 width: '2.5rem',
                 height: '2.5rem',
                 borderRadius: '50%',
-                backgroundColor: '#2563eb',
+                background: 'var(--accent)',
                 display: 'flex',
                 alignItems: 'center',
                 justifyContent: 'center',
-                color: 'white',
+                color: 'var(--accent-ink)',
                 fontWeight: 'bold'
               }}>
                 {(activity.display_name || activity.username)[0].toUpperCase()}
               </div>
               <div>
-                <span style={{ fontWeight: 600 }}>{activity.display_name || activity.username}</span>
-                <span style={{ color: '#6b7280', marginLeft: '0.5rem' }}>
+                <span style={{ fontWeight: 600, color: 'var(--ink)' }}>{activity.display_name || activity.username}</span>
+                <span style={{ color: 'var(--ink-3)', marginLeft: '0.5rem' }}>
                   {getActivityText(activity)}
                 </span>
               </div>
             </div>
 
             {activity.book_title && (
-              <p style={{ color: '#374151', marginLeft: '3.25rem', marginBottom: '0.5rem' }}>
+              <p style={{ color: 'var(--ink-2)', marginLeft: '3.25rem', marginBottom: '0.5rem' }}>
                 《{activity.book_title}》
               </p>
             )}
 
             {activity.content && (
               <p style={{
-                color: '#6b7280',
+                color: 'var(--ink-3)',
                 marginLeft: '3.25rem',
                 fontSize: '0.875rem',
-                backgroundColor: '#f9fafb',
+                background: 'var(--paper-2)',
                 padding: '0.75rem',
-                borderRadius: '0.5rem'
+                borderRadius: '2px'
               }}>
                 {activity.content}
               </p>
@@ -113,7 +113,7 @@ export default function FeedPage() {
               marginLeft: '3.25rem',
               marginTop: '0.5rem',
               fontSize: '0.75rem',
-              color: '#9ca3af'
+              color: 'var(--ink-4)'
             }}>
               {new Date(activity.created_at * 1000).toLocaleString()}
             </div>
@@ -122,7 +122,7 @@ export default function FeedPage() {
       </div>
 
       {activities.length === 0 && (
-        <div style={{ textAlign: 'center', padding: '3rem', color: '#6b7280' }}>
+        <div style={{ textAlign: 'center', padding: '3rem', color: 'var(--ink-3)' }}>
           暂无动态，去关注一些用户吧
         </div>
       )}

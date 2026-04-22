@@ -43,7 +43,7 @@ export default function RankingsPage() {
 
   return (
     <div style={{ maxWidth: '72rem', margin: '0 auto', padding: '2rem 1rem' }}>
-      <h1 style={{ fontSize: '1.5rem', fontWeight: 'bold', marginBottom: '1.5rem' }}>榜单</h1>
+      <h1 className="display" style={{ fontSize: '1.5rem', fontWeight: 500, marginBottom: '1.5rem' }}>榜单</h1>
 
       {/* Tabs */}
       <div style={{ display: 'flex', gap: '0.5rem', marginBottom: '1.5rem' }}>
@@ -51,14 +51,10 @@ export default function RankingsPage() {
           <button
             key={tab.key}
             onClick={() => setActiveTab(tab.key)}
+            className={activeTab === tab.key ? 'chip active' : 'chip'}
             style={{
               padding: '0.5rem 1rem',
-              borderRadius: '0.5rem',
-              border: 'none',
-              cursor: 'pointer',
               fontSize: '0.875rem',
-              backgroundColor: activeTab === tab.key ? '#2563eb' : '#f3f4f6',
-              color: activeTab === tab.key ? 'white' : '#4b5563'
             }}
           >
             {tab.label}
@@ -80,9 +76,9 @@ export default function RankingsPage() {
                 alignItems: 'center',
                 gap: '1rem',
                 padding: '1rem',
-                backgroundColor: 'white',
-                borderRadius: '0.75rem',
-                border: '1px solid #e5e7eb',
+                background: 'var(--paper)',
+                borderRadius: '2px',
+                border: '1px solid var(--rule)',
                 cursor: 'pointer'
               }}
             >
@@ -93,9 +89,9 @@ export default function RankingsPage() {
                 display: 'flex',
                 alignItems: 'center',
                 justifyContent: 'center',
-                borderRadius: '0.5rem',
-                backgroundColor: index < 3 ? '#fef3c7' : '#f3f4f6',
-                color: index < 3 ? '#92400e' : '#6b7280',
+                borderRadius: '2px',
+                background: index < 3 ? 'var(--accent)' : 'var(--paper-2)',
+                color: index < 3 ? 'var(--accent-ink)' : 'var(--ink-3)',
                 fontWeight: 'bold',
                 fontSize: '1.125rem'
               }}>
@@ -104,12 +100,12 @@ export default function RankingsPage() {
 
               {/* Book Info */}
               <div style={{ flex: 1 }}>
-                <h3 style={{ fontWeight: 600, marginBottom: '0.25rem' }}>{book.title}</h3>
-                <p style={{ fontSize: '0.875rem', color: '#6b7280' }}>{book.author}</p>
+                <h3 style={{ fontWeight: 600, marginBottom: '0.25rem', color: 'var(--ink)' }}>{book.title}</h3>
+                <p style={{ fontSize: '0.875rem', color: 'var(--ink-3)' }}>{book.author}</p>
               </div>
 
               {/* Stats */}
-              <div style={{ textAlign: 'right', fontSize: '0.875rem', color: '#6b7280' }}>
+              <div style={{ textAlign: 'right', fontSize: '0.875rem', color: 'var(--ink-3)' }}>
                 <div>⭐ {book.rating_avg.toFixed(1)}</div>
                 <div>👁 {book.read_count}</div>
               </div>
@@ -119,7 +115,7 @@ export default function RankingsPage() {
       )}
 
       {books.length === 0 && !loading && (
-        <div style={{ textAlign: 'center', padding: '3rem', color: '#6b7280' }}>
+        <div style={{ textAlign: 'center', padding: '3rem', color: 'var(--ink-3)' }}>
           暂无数据
         </div>
       )}

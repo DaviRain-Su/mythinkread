@@ -64,7 +64,7 @@ export default function BlogPage() {
       note: '#f3e8ff',
       review: '#fee2e2'
     }
-    return colors[type] || '#f3f4f6'
+    return colors[type] || 'var(--paper-2)'
   }
 
   if (loading) {
@@ -83,21 +83,21 @@ export default function BlogPage() {
           width: '6rem',
           height: '6rem',
           borderRadius: '50%',
-          backgroundColor: '#2563eb',
+          backgroundColor: 'var(--accent)',
           display: 'flex',
           alignItems: 'center',
           justifyContent: 'center',
           color: 'white',
           fontSize: '2rem',
-          fontWeight: 'bold',
+          fontWeight: 500,
           margin: '0 auto 1rem'
         }}>
           {(config.display_name || config.username)[0].toUpperCase()}
         </div>
-        <h1 style={{ fontSize: '1.875rem', fontWeight: 'bold', marginBottom: '0.5rem' }}>
+        <h1 className="display" style={{ fontSize: '1.875rem', fontWeight: 500, marginBottom: '0.5rem' }}>
           {config.title || config.display_name || config.username}
         </h1>
-        <p style={{ color: '#6b7280' }}>{config.description || '读书人的个人博客'}</p>
+        <p style={{ color: 'var(--ink-3)' }}>{config.description || '读书人的个人博客'}</p>
       </div>
 
       {/* Posts */}
@@ -105,9 +105,9 @@ export default function BlogPage() {
         {posts.map((post) => (
           <div key={post.id} style={{
             padding: '1.5rem',
-            backgroundColor: 'white',
-            borderRadius: '0.75rem',
-            border: '1px solid #e5e7eb'
+            backgroundColor: 'var(--paper)',
+            borderRadius: '2px',
+            border: '1px solid var(--rule)'
           }}>
             <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginBottom: '0.75rem' }}>
               <span style={{
@@ -115,12 +115,12 @@ export default function BlogPage() {
                 borderRadius: '0.25rem',
                 fontSize: '0.75rem',
                 backgroundColor: getTypeColor(post.type),
-                color: '#374151'
+                color: 'var(--ink-2)'
               }}>
                 {getTypeLabel(post.type)}
               </span>
               {post.book_title && (
-                <span style={{ fontSize: '0.875rem', color: '#6b7280' }}>
+                <span style={{ fontSize: '0.875rem', color: 'var(--ink-3)' }}>
                   《{post.book_title}》
                 </span>
               )}
@@ -131,7 +131,7 @@ export default function BlogPage() {
             </h2>
 
             <div style={{
-              color: '#374151',
+              color: 'var(--ink-2)',
               lineHeight: 1.6,
               whiteSpace: 'pre-wrap',
               fontSize: '0.875rem'
@@ -139,7 +139,7 @@ export default function BlogPage() {
               {post.content}
             </div>
 
-            <div style={{ marginTop: '1rem', fontSize: '0.75rem', color: '#9ca3af' }}>
+            <div style={{ marginTop: '1rem', fontSize: '0.75rem', color: 'var(--ink-4)' }}>
               {new Date(post.created_at * 1000).toLocaleDateString()}
             </div>
           </div>
@@ -147,7 +147,7 @@ export default function BlogPage() {
       </div>
 
       {posts.length === 0 && (
-        <div style={{ textAlign: 'center', padding: '3rem', color: '#6b7280' }}>
+        <div style={{ textAlign: 'center', padding: '3rem', color: 'var(--ink-3)' }}>
           暂无文章，开始阅读和批注来自动生成内容吧
         </div>
       )}

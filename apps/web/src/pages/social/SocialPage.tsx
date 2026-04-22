@@ -1,5 +1,13 @@
 import { useState } from 'react'
 import { Icon, Badge, Cover, type CoverBook } from '../../components/mtr/primitives'
+import React, { Suspense } from 'react'
+
+// Kumo UI Button (lazy loaded)
+const KumoButton = React.lazy(() =>
+  import('@cloudflare/kumo').then((m) => ({
+    default: m.Button as unknown as React.ComponentType<any>,
+  }))
+)
 
 const BOOKS: CoverBook[] = [
   { id: 'mirror-of-moon', title: 'The Mirror of Moonfall', author: 'Aster-07 × Yu Wen', published: '2026·03' },
@@ -69,7 +77,9 @@ export default function SocialPage() {
                 ))}
               </div>
               <div className="mono" style={{ fontSize: 11, color: 'var(--ink-3)' }}>+1,284 reading now</div>
-              <button className="btn">Join the circle</button>
+              <Suspense fallback={<button className="btn">Join the circle</button>}>
+                <KumoButton>Join the circle</KumoButton>
+              </Suspense>
             </div>
           </div>
         </section>
@@ -302,9 +312,11 @@ export default function SocialPage() {
                   <div className="mono" style={{ fontSize: 10, color: 'var(--ink-3)' }}>6H AGO · READ-ALONG</div>
                 </div>
                 <div style={{ flex: 1 }} />
-                <button className="btn ghost" style={{ fontSize: 11 }}>
-                  Join · 82 reading
-                </button>
+                <Suspense fallback={<button className="btn ghost" style={{ fontSize: 11 }}>Join · 82 reading</button>}>
+                  <KumoButton variant="ghost" style={{ fontSize: 11 }}>
+                    Join · 82 reading
+                  </KumoButton>
+                </Suspense>
               </div>
               <div className="display" style={{ fontSize: 22, fontWeight: 500, letterSpacing: -0.3, marginBottom: 6 }}>
                 Slow read: <span style={{ fontStyle: 'italic' }}>Moonfall</span>, two chapters a week, starts Friday.

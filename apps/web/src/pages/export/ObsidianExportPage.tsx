@@ -1,5 +1,13 @@
 import { useState } from 'react'
 import { Icon } from '../../components/mtr/primitives'
+import React, { Suspense } from 'react'
+
+// Kumo UI Button (lazy loaded)
+const KumoButton = React.lazy(() =>
+  import('@cloudflare/kumo').then((m) => ({
+    default: m.Button as unknown as React.ComponentType<any>,
+  }))
+)
 
 const INCLUDE_ITEMS = [
   ['Book Wiki (concepts, entities, themes, timeline)', true, '184 files · 2.1 MB'],
@@ -268,10 +276,16 @@ export default function ObsidianExportPage() {
               <div className="mono" style={{ fontSize: 9, color: 'var(--ink-4)' }}>you own this forever · signed with your key</div>
             </div>
             <div style={{ flex: 1 }} />
-            <button className="btn ghost">Cancel</button>
-            <button className="btn accent" style={{ background: '#7c3aed', borderColor: '#7c3aed' }}>
+            <Suspense fallback={<button className="btn ghost">Cancel</button>}>
+              <KumoButton variant="ghost">Cancel</KumoButton>
+            </Suspense>
+            <Suspense fallback={<button className="btn accent" style={{ background: '#7c3aed', borderColor: '#7c3aed' }}>
               <Icon name="download" size={11} /> &nbsp;Download vault
-            </button>
+            </button>}>
+              <KumoButton style={{ background: '#7c3aed', borderColor: '#7c3aed' }}>
+                <Icon name="download" size={11} /> &nbsp;Download vault
+              </KumoButton>
+            </Suspense>
           </div>
         </div>
       </div>

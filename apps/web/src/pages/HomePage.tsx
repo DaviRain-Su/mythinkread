@@ -14,12 +14,17 @@ import {
   type CoverBook,
 } from '../components/mtr/primitives'
 import BookShelf3D from '../components/mtr/BookShelf3D'
-import React from 'react'
+import React, { Suspense } from 'react'
 
-// Kumo UI Skeleton (lazy loaded)
+// Kumo UI components (lazy loaded)
 const KumoSkeleton = React.lazy(() =>
   import('@cloudflare/kumo').then((m) => ({
     default: m.SkeletonLine as unknown as React.ComponentType<any>,
+  }))
+)
+const KumoButton = React.lazy(() =>
+  import('@cloudflare/kumo').then((m) => ({
+    default: m.Button as unknown as React.ComponentType<any>,
   }))
 )
 
@@ -394,18 +399,16 @@ export default function HomePage() {
                 flexWrap: 'wrap',
               }}
             >
-              <button
-                className="btn accent"
-                onClick={() => navigate(`/books/${featured.id}`)}
-              >
-                <Icon name="book" size={12} /> {t('home.beginReading')}
-              </button>
-              <button
-                className="btn ghost"
-                onClick={() => navigate(`/books/${featured.id}`)}
-              >
-                {t('home.details')}
-              </button>
+              <Suspense fallback={<button className="btn accent" onClick={() => navigate(`/books/${featured.id}`)}><Icon name="book" size={12} /> {t('home.beginReading')}</button>}>
+                <KumoButton onClick={() => navigate(`/books/${featured.id}`)}>
+                  <Icon name="book" size={12} /> {t('home.beginReading')}
+                </KumoButton>
+              </Suspense>
+              <Suspense fallback={<button className="btn ghost" onClick={() => navigate(`/books/${featured.id}`)}>{t('home.details')}</button>}>
+                <KumoButton variant="ghost" onClick={() => navigate(`/books/${featured.id}`)}>
+                  {t('home.details')}
+                </KumoButton>
+              </Suspense>
               <Badge type={featured.type} />
               <AIRatioBar pct={featured.aiPct} />
               {featured.cid && <CID value={featured.cid} />}

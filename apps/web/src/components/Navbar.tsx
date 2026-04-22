@@ -2,7 +2,7 @@ import { useAuthStore } from '../stores/authStore'
 import { useNavigate, useLocation } from 'react-router-dom'
 import NotificationBell from './NotificationBell'
 import { Icon } from './mtr/primitives'
-import React, { useState, useCallback } from 'react'
+import React, { useState, useCallback, Suspense } from 'react'
 import { useTranslation } from 'react-i18next'
 
 // Kumo UI Command Palette type
@@ -14,10 +14,15 @@ interface CommandPaletteProps {
   placeholder?: string
 }
 
-// Kumo UI Command Palette (lazy loaded to avoid bundle size impact)
+// Kumo UI components (lazy loaded)
 const CommandPalette = React.lazy(() =>
   import('@cloudflare/kumo').then((m) => ({
     default: m.CommandPalette as unknown as React.ComponentType<CommandPaletteProps>,
+  }))
+)
+const KumoButton = React.lazy(() =>
+  import('@cloudflare/kumo').then((m) => ({
+    default: m.Button as unknown as React.ComponentType<any>,
   }))
 )
 
@@ -50,9 +55,9 @@ export default function Navbar() {
     setCommandOpen(false)
   }, [navigate])
 
-  const toggleLang = () => {
-    const next = i18n.language === 'zh' ? 'en' : 'zh'
-    i18n.changeLanguage(next)
+  const toggleLang = (lang?: string) => {
+    const target = lang ?? (i18n.language?.startsWith('zh') ? 'en' : 'zh')
+    i18n.changeLanguage(target)
   }
 
   const commandItems = NAV_ITEMS.map(([path, key]) => ({
@@ -184,6 +189,7 @@ export default function Navbar() {
         <div
           style={{
             display: 'flex',
+            flexShrink: 0,
             background: 'var(--paper)',
             border: '1px solid var(--ink)',
             borderRadius: 2,
@@ -200,13 +206,13 @@ export default function Navbar() {
           ].map(([k, lbl]) => (
             <div
               key={k}
-              onClick={() => toggleLang()}
+              onClick={() => toggleLang(k)}
               style={{
                 padding: '6px 12px',
                 cursor: 'pointer',
-                background: i18n.language === k ? 'var(--ink)' : 'transparent',
-                color: i18n.language === k ? 'var(--paper)' : 'var(--ink-2)',
-                fontWeight: i18n.language === k ? 600 : 400,
+                background: i18n.language?.startsWith(k) ? 'var(--ink)' : 'transparent',
+                color: i18n.language?.startsWith(k) ? 'var(--paper)' : 'var(--ink-2)',
+                fontWeight: i18n.language?.startsWith(k) ? 600 : 400,
                 fontFamily:
                   k === 'zh'
                     ? "var(--font-cjk, 'Noto Serif SC', serif)"
@@ -221,13 +227,19 @@ export default function Navbar() {
         {/* Right cluster */}
         {isAuthenticated ? (
           <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-            <button
-              onClick={() => navigate('/create')}
-              className="btn accent"
-              style={{ fontSize: 12, padding: '7px 12px' }}
-            >
-              <Icon name="pen" size={11} /> {t('common.create')}
-            </button>
+            <Suspense fallback={
+              <button className="btn accent" style={{ fontSize: 12, padding: '7px 12px' }}>
+                <Icon name="pen" size={11} /> {t('common.create')}
+              </button>
+            }>
+              <KumoButton
+                onClick={() => navigate('/create')}
+                size="sm"
+                style={{ fontSize: 12, padding: '7px 12px' }}
+              >
+                <Icon name="pen" size={11} /> {t('common.create')}
+              </KumoButton>
+            </Suspense>
             <NotificationBell />
             <button
               onClick={() => navigate('/profile')}
@@ -277,13 +289,19 @@ export default function Navbar() {
             >
               {t('common.signIn')}
             </button>
-            <button
-              onClick={() => navigate('/register')}
-              className="btn accent"
-              style={{ fontSize: 12, padding: '7px 14px' }}
-            >
-              {t('common.join')}
-            </button>
+            <Suspense fallback={
+              <button className="btn accent" style={{ fontSize: 12, padding: '7px 14px' }}>
+                {t('common.join')}
+              </button>
+            }>
+              <KumoButton
+                onClick={() => navigate('/register')}
+                size="sm"
+                style={{ fontSize: 12, padding: '7px 14px' }}
+              >
+                {t('common.join')}
+              </KumoButton>
+            </Suspense>
           </div>
         )}
       </div>

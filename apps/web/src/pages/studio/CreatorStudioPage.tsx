@@ -1,5 +1,13 @@
 import { useState } from 'react'
 import { Icon, Badge, AI_BADGES, type AIType } from '../../components/mtr/primitives'
+import React, { Suspense } from 'react'
+
+// Kumo UI Button (lazy loaded)
+const KumoButton = React.lazy(() =>
+  import('@cloudflare/kumo').then((m) => ({
+    default: m.Button as unknown as React.ComponentType<any>,
+  }))
+)
 
 type TabKey = 'compose' | 'generate' | 'publish'
 
@@ -127,9 +135,15 @@ export default function CreatorStudioPage() {
             ))}
           </div>
 
-          <button className="btn ghost" style={{ width: '100%', marginTop: 18, fontSize: 11 }}>
-            <Icon name="plus" size={10} /> &nbsp;New chapter
-          </button>
+          <Suspense fallback={
+            <button className="btn ghost" style={{ width: '100%', marginTop: 18, fontSize: 11 }}>
+              <Icon name="plus" size={10} /> &nbsp;New chapter
+            </button>
+          }>
+            <KumoButton variant="ghost" style={{ width: '100%', marginTop: 18, fontSize: 11 }}>
+              <Icon name="plus" size={10} /> &nbsp;New chapter
+            </KumoButton>
+          </Suspense>
         </aside>
 
         {/* ─── Main area ─── */}
@@ -166,12 +180,16 @@ export default function CreatorStudioPage() {
               <div className="mono" style={{ fontSize: 10, color: 'var(--ink-3)' }}>
                 autosaved · 00:14 ago
               </div>
-              <button className="btn ghost" style={{ fontSize: 11 }}>
-                Preview
-              </button>
-              <button className="btn" style={{ fontSize: 11 }}>
-                Commit draft
-              </button>
+              <Suspense fallback={<button className="btn ghost" style={{ fontSize: 11 }}>Preview</button>}>
+                <KumoButton variant="ghost" style={{ fontSize: 11 }}>
+                  Preview
+                </KumoButton>
+              </Suspense>
+              <Suspense fallback={<button className="btn" style={{ fontSize: 11 }}>Commit draft</button>}>
+                <KumoButton style={{ fontSize: 11 }}>
+                  Commit draft
+                </KumoButton>
+              </Suspense>
             </div>
           </div>
 
@@ -285,15 +303,15 @@ export default function CreatorStudioPage() {
                       the road.
                     </p>
                     <div style={{ display: 'flex', gap: 8, marginTop: 10 }}>
-                      <button className="btn" style={{ fontSize: 10, padding: '4px 10px' }}>
-                        Accept
-                      </button>
-                      <button className="btn ghost" style={{ fontSize: 10, padding: '4px 10px' }}>
-                        Revise
-                      </button>
-                      <button className="btn ghost" style={{ fontSize: 10, padding: '4px 10px' }}>
-                        Reject
-                      </button>
+                      <Suspense fallback={<button className="btn" style={{ fontSize: 10, padding: '4px 10px' }}>Accept</button>}>
+                        <KumoButton style={{ fontSize: 10, padding: '4px 10px' }}>Accept</KumoButton>
+                      </Suspense>
+                      <Suspense fallback={<button className="btn ghost" style={{ fontSize: 10, padding: '4px 10px' }}>Revise</button>}>
+                        <KumoButton variant="ghost" style={{ fontSize: 10, padding: '4px 10px' }}>Revise</KumoButton>
+                      </Suspense>
+                      <Suspense fallback={<button className="btn ghost" style={{ fontSize: 10, padding: '4px 10px' }}>Reject</button>}>
+                        <KumoButton variant="ghost" style={{ fontSize: 10, padding: '4px 10px' }}>Reject</KumoButton>
+                      </Suspense>
                     </div>
                   </div>
                 </div>
@@ -403,9 +421,9 @@ export default function CreatorStudioPage() {
                     gap: 14,
                   }}
                 >
-                  <button className="btn accent">
-                    <Icon name="sparkle" size={11} /> &nbsp;Generate · 5,000 words
-                  </button>
+                  <Suspense fallback={<button className="btn accent"><Icon name="sparkle" size={11} /> &nbsp;Generate · 5,000 words</button>}>
+                    <KumoButton><Icon name="sparkle" size={11} /> &nbsp;Generate · 5,000 words</KumoButton>
+                  </Suspense>
                   <div className="mono" style={{ fontSize: 10, color: 'var(--ink-3)' }}>
                     EST · 42 sec · $0.06
                   </div>
@@ -633,9 +651,9 @@ export default function CreatorStudioPage() {
                     bafybeihxyz4q2qk7m3tla
                     <span style={{ opacity: 0.5 }}>qetxzp4jkmn6y8h2v5dlu</span>
                   </div>
-                  <button className="btn accent" style={{ marginTop: 16 }}>
-                    ✦ Publish + Mint
-                  </button>
+                  <Suspense fallback={<button className="btn accent" style={{ marginTop: 16 }}>✦ Publish + Mint</button>}>
+                    <KumoButton style={{ marginTop: 16 }}>✦ Publish + Mint</KumoButton>
+                  </Suspense>
                 </div>
               </div>
             </div>

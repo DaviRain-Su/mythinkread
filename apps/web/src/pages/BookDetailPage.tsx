@@ -10,6 +10,14 @@ import {
   aiTypeFromPct,
   formatCID,
 } from '../components/mtr/primitives'
+import React, { Suspense } from 'react'
+
+// Kumo UI Button (lazy loaded)
+const KumoButton = React.lazy(() =>
+  import('@cloudflare/kumo').then((m) => ({
+    default: m.Button as unknown as React.ComponentType<any>,
+  }))
+)
 
 interface Comment {
   id: string
@@ -242,26 +250,27 @@ export default function BookDetailPage() {
           <div>
             <Cover book={{ id: book.id, title: book.title, author: book.author, published: book.published_at }} size="xl" />
             <div style={{ display: 'flex', flexDirection: 'column', gap: 10, marginTop: 20 }}>
-              <button
-                className="btn accent"
-                onClick={() => book.chapters?.[0] && navigate(`/books/${book.id}/read/${book.chapters[0].id}`)}
-              >
-                <Icon name="book" size={12} /> Begin reading ·
-                <span className="cjk" style={{ fontSize: 11, opacity: 0.8 }}>
-                  开始阅读
-                </span>
-              </button>
+              <Suspense fallback={<button className="btn accent" onClick={() => book.chapters?.[0] && navigate(`/books/${book.id}/read/${book.chapters[0].id}`)}><Icon name="book" size={12} /> Begin reading ·<span className="cjk" style={{ fontSize: 11, opacity: 0.8 }}>开始阅读</span></button>}>
+                <KumoButton onClick={() => book.chapters?.[0] && navigate(`/books/${book.id}/read/${book.chapters[0].id}`)}>
+                  <Icon name="book" size={12} /> Begin reading ·
+                  <span className="cjk" style={{ fontSize: 11, opacity: 0.8 }}>
+                    开始阅读
+                  </span>
+                </KumoButton>
+              </Suspense>
               <div style={{ display: 'flex', gap: 8 }}>
-                <button
-                  className="btn ghost"
-                  style={{ flex: 1, fontSize: 11 }}
-                  onClick={() => setShowRatingForm((x) => !x)}
-                >
-                  <Icon name="star" size={10} /> {myRating > 0 ? `${myRating}★ yours` : 'Rate'}
-                </button>
-                <button className="btn ghost" style={{ flex: 1, fontSize: 11 }}>
+                <Suspense fallback={<button className="btn ghost" style={{ flex: 1, fontSize: 11 }} onClick={() => setShowRatingForm((x) => !x)}><Icon name="star" size={10} /> {myRating > 0 ? `${myRating}★ yours` : 'Rate'}</button>}>
+                  <KumoButton variant="ghost" style={{ flex: 1, fontSize: 11 }} onClick={() => setShowRatingForm((x) => !x)}>
+                    <Icon name="star" size={10} /> {myRating > 0 ? `${myRating}★ yours` : 'Rate'}
+                  </KumoButton>
+                </Suspense>
+                <Suspense fallback={<button className="btn ghost" style={{ flex: 1, fontSize: 11 }}>
                   <Icon name="share" size={10} /> Share
-                </button>
+                </button>}>
+                  <KumoButton variant="ghost" style={{ flex: 1, fontSize: 11 }}>
+                    <Icon name="share" size={10} /> Share
+                  </KumoButton>
+                </Suspense>
               </div>
             </div>
           </div>
@@ -554,16 +563,16 @@ export default function BookDetailPage() {
                       style={{ fontFamily: 'var(--font-body)' }}
                     />
                     <div style={{ display: 'flex', gap: 8, marginTop: 12 }}>
-                      <button
-                        className="btn accent"
-                        disabled={myRating < 1}
-                        onClick={handleSubmitRating}
-                      >
-                        Submit
-                      </button>
-                      <button className="btn ghost" onClick={() => setShowRatingForm(false)}>
-                        Cancel
-                      </button>
+                      <Suspense fallback={<button className="btn accent" disabled={myRating < 1} onClick={handleSubmitRating}>Submit</button>}>
+                        <KumoButton disabled={myRating < 1} onClick={handleSubmitRating}>
+                          Submit
+                        </KumoButton>
+                      </Suspense>
+                      <Suspense fallback={<button className="btn ghost" onClick={() => setShowRatingForm(false)}>Cancel</button>}>
+                        <KumoButton variant="ghost" onClick={() => setShowRatingForm(false)}>
+                          Cancel
+                        </KumoButton>
+                      </Suspense>
                     </div>
                   </div>
                 )}
@@ -773,13 +782,11 @@ export default function BookDetailPage() {
                     style={{ fontFamily: 'var(--font-body)' }}
                   />
                   <div style={{ display: 'flex', justifyContent: 'flex-end', marginTop: 10 }}>
-                    <button
-                      className="btn accent"
-                      disabled={!newComment.trim()}
-                      onClick={handleSubmitComment}
-                    >
-                      Post
-                    </button>
+                    <Suspense fallback={<button className="btn accent" disabled={!newComment.trim()} onClick={handleSubmitComment}>Post</button>}>
+                      <KumoButton disabled={!newComment.trim()} onClick={handleSubmitComment}>
+                        Post
+                      </KumoButton>
+                    </Suspense>
                   </div>
                 </div>
 

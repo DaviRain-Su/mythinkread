@@ -1,6 +1,14 @@
 import { useEffect, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useTranslation } from 'react-i18next'
+import React, { Suspense } from 'react'
+
+// Kumo UI Button (lazy loaded)
+const KumoButton = React.lazy(() =>
+  import('@cloudflare/kumo').then((m) => ({
+    default: m.Button as unknown as React.ComponentType<any>,
+  }))
+)
 
 interface MemoryCard {
   id: string
@@ -118,9 +126,11 @@ export default function FSRSReviewPage() {
             />
           </div>
         )}
-        <button className="btn accent" onClick={() => navigate('/')}>
-          {t('common.backToHome')}
-        </button>
+        <Suspense fallback={<button className="btn accent" onClick={() => navigate('/')}>{t('common.backToHome')}</button>}>
+          <KumoButton onClick={() => navigate('/')}>
+            {t('common.backToHome')}
+          </KumoButton>
+        </Suspense>
       </div>
     )
   }
@@ -280,13 +290,15 @@ export default function FSRSReviewPage() {
 
           {/* Actions */}
           {!showAnswer ? (
-            <button
-              className="btn"
-              style={{ width: '100%', justifyContent: 'center' }}
-              onClick={() => setShowAnswer(true)}
-            >
-              {t('fsrs.showAnswer')}
-            </button>
+            <Suspense fallback={
+              <button className="btn" style={{ width: '100%', justifyContent: 'center' }} onClick={() => setShowAnswer(true)}>
+                {t('fsrs.showAnswer')}
+              </button>
+            }>
+              <KumoButton style={{ width: '100%', justifyContent: 'center' }} onClick={() => setShowAnswer(true)}>
+                {t('fsrs.showAnswer')}
+              </KumoButton>
+            </Suspense>
           ) : (
             <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr 1fr', gap: 10 }}>
               <GradeButton
