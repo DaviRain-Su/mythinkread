@@ -37,6 +37,7 @@ export interface Env {
   JWT_SECRET: string
   PINATA_JWT: string
   BUNDLR_PRIVATE_KEY: string
+  AZURE_TTS_KEY: string
   ENVIRONMENT: string
 }
 
@@ -106,7 +107,23 @@ async function queue(
   }
 }
 
+/**
+ * Cron-scheduled handler: recompute hot/new/rated/trending rankings
+ * for daily/weekly/monthly/all_time windows every hour.
+ */
+async function scheduled(
+  _event: ScheduledEvent,
+  env: Env,
+  _ctx: ExecutionContext
+): Promise<void> {
+  const { recomputeRankings } = await import('./lib/rankings')
+  console.log('[cron] Recomputing rankings...')
+  await recomputeRankings(env)
+  console.log('[cron] Rankings updated.')
+}
+
 export default {
   fetch: app.fetch,
-  queue
+  queue,
+  scheduled
 }

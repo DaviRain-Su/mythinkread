@@ -182,6 +182,24 @@ CREATE TABLE IF NOT EXISTS rankings (
     UNIQUE(type, book_id, period)
 );
 
+-- TTS audio cache table (for AI voice reading)
+-- No FK on book_id/chapter_id so that TTS can be generated for arbitrary
+-- text snippets even before the parent rows exist.
+CREATE TABLE IF NOT EXISTS tts_audio_cache (
+    id TEXT PRIMARY KEY,
+    book_id TEXT,
+    chapter_id TEXT,
+    voice_id TEXT NOT NULL,
+    text_hash TEXT NOT NULL,
+    audio_cid TEXT,
+    audio_url TEXT,
+    duration INTEGER,
+    status TEXT DEFAULT 'pending' CHECK (status IN ('pending', 'processing', 'completed', 'failed')),
+    created_at INTEGER NOT NULL,
+    completed_at INTEGER,
+    UNIQUE(book_id, chapter_id, voice_id, text_hash)
+);
+
 -- Create indexes for performance
 CREATE INDEX IF NOT EXISTS idx_books_status ON books(status);
 CREATE INDEX IF NOT EXISTS idx_books_creator ON books(creator_id);

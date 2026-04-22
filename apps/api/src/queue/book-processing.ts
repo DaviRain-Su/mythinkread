@@ -1,6 +1,7 @@
 import type { Env } from '../index'
 import { uploadToIPFS, uploadJSONToIPFS } from '../lib/ipfs'
 import { uploadToArweave, uploadJSONToArweave } from '../lib/arweave'
+import { recordUpload } from '../lib/cost-monitor'
 
 interface BookPublishMessage {
   type: 'publish_book'
@@ -108,6 +109,11 @@ export async function handleBookProcessing(env: Env, message: BookPublishMessage
         expirationTtl: 7 * 24 * 60 * 60
       })
 
+      // Track storage cost for this upload.
+      const bodyBytes = new TextEncoder().encode(body).length
+      await recordUpload(env, 'ipfs', bodyBytes)
+      await recordUpload(env, 'arweave', bodyBytes)
+
       chapterManifests.push({
         id: ch.id,
         idx: ch.idx,
@@ -147,6 +153,11 @@ export async function handleBookProcessing(env: Env, message: BookPublishMessage
       'Book-Id': bookId,
       'Book-Title': book.title
     })
+
+    // Track storage cost for manifest uploads.
+    const manifestBytes = new TextEncoder().encode(JSON.stringify(structuredContent)).length
+    await recordUpload(env, 'ipfs', manifestBytes)
+    await recordUpload(env, 'arweave', manifestBytes)
 
     const now = Math.floor(Date.now() / 1000)
     await db

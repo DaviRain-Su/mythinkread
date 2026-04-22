@@ -231,4 +231,11 @@ admin.get('/audit-logs', async (c) => {
   return c.json({ items: results.results || [] })
 })
 
+// GET /api/admin/storage-cost - Current month storage cost totals (admin only)
+admin.get('/storage-cost', async (c) => {
+  const { getMonthlyTotals } = await import('../lib/cost-monitor')
+  const totals = await getMonthlyTotals(c.env)
+  return c.json(totals)
+})
+
 export default admin

@@ -19,6 +19,7 @@ export default function TTSPlayer({ text, bookId, chapterId }: TTSPlayerProps) {
   const [selectedVoice, setSelectedVoice] = useState('zh-CN-XiaoxiaoNeural')
   const [isPlaying, setIsPlaying] = useState(false)
   const [isLoading, setIsLoading] = useState(false)
+  const [error, setError] = useState('')
   const [audioUrl, setAudioUrl] = useState('')
   const [progress, setProgress] = useState(0)
   const audioRef = useRef<HTMLAudioElement>(null)
@@ -52,6 +53,7 @@ export default function TTSPlayer({ text, bookId, chapterId }: TTSPlayerProps) {
   const handleGenerate = async () => {
     if (!text) return
     setIsLoading(true)
+    setError('')
     try {
       const token = localStorage.getItem('mtr_token')
       const res = await fetch('/api/tts/generate', {
@@ -67,12 +69,17 @@ export default function TTSPlayer({ text, bookId, chapterId }: TTSPlayerProps) {
           voice_id: selectedVoice
         })
       })
-      if (!res.ok) throw new Error('Failed to generate TTS')
+      if (!res.ok) {
+        const body = await res.json().catch(() => ({}))
+        throw new Error(body.error || `Failed to generate TTS (${res.status})`)
+      }
       const data = await res.json()
       setAudioUrl(data.audio_url)
       setIsPlaying(false)
     } catch (err) {
-      alert(err instanceof Error ? err.message : '生成失败')
+      const msg = err instanceof Error ? err.message : '生成失败'
+      setError(msg)
+      console.error(err)
     } finally {
       setIsLoading(false)
     }
@@ -210,6 +217,20 @@ export default function TTSPlayer({ text, bookId, chapterId }: TTSPlayerProps) {
           </>
         )}
       </div>
+
+      {error && (
+        <div style={{
+          maxWidth: '72rem',
+          margin: '0.5rem auto 0',
+          padding: '0.5rem 0.75rem',
+          backgroundColor: '#fee2e2',
+          color: '#b91c1c',
+          borderRadius: '0.375rem',
+          fontSize: '0.875rem'
+        }}>
+          {error}
+        </div>
+      )}
 
       {audioUrl && (
         <audio ref={audioRef} src={audioUrl} style={{ display: 'none' }} />

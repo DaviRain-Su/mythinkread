@@ -32,3 +32,6 @@ dead_letter_queue = "book-processing-dlq"
 [ai]
 binding = "AI"
 remote = true
+
+[triggers]
+crons = ["0 * * * *"]
