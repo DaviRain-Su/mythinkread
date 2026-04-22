@@ -2,6 +2,21 @@ import { useCallback, useEffect, useRef, useState } from 'react'
 import { useNavigate, useParams } from 'react-router-dom'
 import { Icon } from '../components/mtr/primitives'
 import BookFlip3D from '../components/mtr/BookFlip3D'
+import { useToast } from '../components/KumoToastProvider'
+import React from 'react'
+
+// Kumo UI components (lazy loaded)
+const KumoDialog = React.lazy(() =>
+  import('@cloudflare/kumo').then((m) => ({
+    default: m.Dialog as unknown as React.ComponentType<any>,
+  }))
+)
+const KumoTooltip = React.lazy(() =>
+  import('@cloudflare/kumo').then((m) => ({
+    default: m.Tooltip as unknown as React.ComponentType<any>,
+  }))
+)
+
 
 interface Chapter {
   id: string
@@ -54,6 +69,8 @@ export default function BookReaderPage() {
   const [annotationNote, setAnnotationNote] = useState('')
   const [fontKey, setFontKey] = useState<FontKey>('serif')
   const [density, setDensity] = useState<'compact' | 'comfortable' | 'spacious'>('comfortable')
+  const { showToast } = useToast()
+  const [showExitDialog, setShowExitDialog] = useState(false)
 
   useEffect(() => {
     void loadBook()
@@ -152,8 +169,9 @@ export default function BookReaderPage() {
       setSelectionRange(null)
       window.getSelection()?.removeAllRanges()
       void loadAnnotations(currentChapter.id)
+      showToast('Annotation saved successfully', 'success')
     } catch (err) {
-      alert(err instanceof Error ? err.message : 'Failed to create annotation')
+      showToast(err instanceof Error ? err.message : 'Failed to create annotation', 'error')
     }
   }
 
@@ -292,8 +310,43 @@ export default function BookReaderPage() {
           >
             3D
           </button>
+          <div style={{ width: 1, height: 20, background: 'var(--rule)' }} />
+          <React.Suspense fallback={null}>
+            <KumoTooltip content="Exit reader">
+              <button
+                className="chip"
+                onClick={() => setShowExitDialog(true)}
+                style={{
+                  background: 'var(--paper)',
+                  color: 'var(--ink-2)',
+                  border: '1px solid var(--rule)',
+                  cursor: 'pointer',
+                }}
+              >
+                Exit
+              </button>
+            </KumoTooltip>
+          </React.Suspense>
         </div>
       </div>
+
+      {/* Exit Dialog */}
+      {showExitDialog && (
+        <React.Suspense fallback={null}>
+          <KumoDialog
+            open={showExitDialog}
+            onOpenChange={setShowExitDialog}
+            title="Exit Reader"
+            description="Your reading progress has been saved. Are you sure you want to exit?"
+            onConfirm={() => {
+              setShowExitDialog(false)
+              navigate(`/books/${book.id}`)
+              showToast('Reading progress saved', 'success')
+            }}
+            onCancel={() => setShowExitDialog(false)}
+          />
+        </React.Suspense>
+      )}
 
       {/* 3D Flip Animation */}
       {show3DFlip && book && (

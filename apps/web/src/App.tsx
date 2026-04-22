@@ -38,12 +38,14 @@ import ObsidianExportPage from './pages/export/ObsidianExportPage'
 import WikiCoEditPage from './pages/wiki/WikiCoEditPage'
 import FSRSReviewPage from './pages/fsrs/FSRSReviewPage'
 import Navbar from './components/Navbar'
+import { KumoToastProvider } from './components/KumoToastProvider'
 
 function App() {
   return (
     <div style={{ minHeight: '100vh', background: 'var(--paper)' }}>
-      <Navbar />
-      <Routes>
+      <KumoToastProvider>
+        <Navbar />
+        <Routes>
         <Route path="/" element={<HomePage />} />
         <Route path="/login" element={<LoginPage />} />
         <Route path="/register" element={<RegisterPage />} />
@@ -83,6 +85,7 @@ function App() {
         <Route path="/export" element={<ObsidianExportPage />} />
         <Route path="/fsrs" element={<FSRSReviewPage />} />
       </Routes>
+      </KumoToastProvider>
     </div>
   )
 }

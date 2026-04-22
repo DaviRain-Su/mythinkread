@@ -14,6 +14,14 @@ import {
   type CoverBook,
 } from '../components/mtr/primitives'
 import BookShelf3D from '../components/mtr/BookShelf3D'
+import React from 'react'
+
+// Kumo UI Skeleton (lazy loaded)
+const KumoSkeleton = React.lazy(() =>
+  import('@cloudflare/kumo').then((m) => ({
+    default: m.SkeletonLine as unknown as React.ComponentType<any>,
+  }))
+)
 
 interface ApiBook {
   id: string
@@ -207,6 +215,7 @@ export default function HomePage() {
   const { lang } = useLangStore()
   const [books, setBooks] = useState<DisplayBook[]>(FALLBACK_BOOKS)
   const [filter, setFilter] = useState<FilterKey>('all')
+  const [loading, setLoading] = useState(true)
 
   useEffect(() => {
     let cancelled = false
@@ -221,6 +230,8 @@ export default function HomePage() {
         setBooks(merged)
       } catch {
         /* keep fallback */
+      } finally {
+        setLoading(false)
       }
     })()
     return () => {
@@ -532,29 +543,49 @@ export default function HomePage() {
 
       {/* Grid */}
       <section style={{ maxWidth: 1280, margin: '0 auto', padding: '30px 44px 80px' }}>
-        <header
-          style={{
-            display: 'flex',
-            justifyContent: 'space-between',
-            alignItems: 'baseline',
-            marginBottom: 22,
-          }}
-        >
-          <h2
-            className="display"
-            style={{
-              fontSize: 28,
-              fontWeight: 400,
-              letterSpacing: '-0.02em',
-              margin: 0,
-            }}
-          >
-            {lang === 'zh' ? '新入档' : 'New from the archive'}
-          </h2>
-          <div className="mono" style={{ fontSize: 10, color: 'var(--ink-3)' }}>
-            {filtered.length} TITLES
+        {loading && (
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(340px, 1fr))', gap: '28px 36px' }}>
+            <React.Suspense fallback={null}>
+              {Array.from({ length: 6 }).map((_, i) => (
+                <div key={i} style={{ display: 'grid', gridTemplateColumns: '110px 1fr', gap: 18, paddingBottom: 22 }}>
+                  <div style={{ height: 140, background: 'var(--paper-2)', borderRadius: 2 }} />
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+                    <KumoSkeleton width="60%" height={16} />
+                    <KumoSkeleton width="80%" height={20} />
+                    <KumoSkeleton width="40%" height={12} />
+                    <KumoSkeleton width="100%" height={14} />
+                    <KumoSkeleton width="70%" height={14} />
+                  </div>
+                </div>
+              ))}
+            </React.Suspense>
           </div>
-        </header>
+        )}
+        {!loading && (
+          <>
+            <header
+              style={{
+                display: 'flex',
+                justifyContent: 'space-between',
+                alignItems: 'baseline',
+                marginBottom: 22,
+              }}
+            >
+              <h2
+                className="display"
+                style={{
+                  fontSize: 28,
+                  fontWeight: 400,
+                  letterSpacing: '-0.02em',
+                  margin: 0,
+                }}
+              >
+                {lang === 'zh' ? '新入档' : 'New from the archive'}
+              </h2>
+              <div className="mono" style={{ fontSize: 10, color: 'var(--ink-3)' }}>
+                {filtered.length} TITLES
+              </div>
+            </header>
 
         <div
           style={{
@@ -656,7 +687,9 @@ export default function HomePage() {
             </article>
           ))}
         </div>
-      </section>
-    </div>
-  )
+      </>
+    )}
+    </section>
+  </div>
+)
 }
