@@ -23,7 +23,7 @@ export async function uploadToIPFS(
 ): Promise<string> {
   const jwt = requireSecret(env, 'PINATA_JWT')
   if (!jwt) {
-    return generateMockCid()
+    return devMockValue(44)
   }
 
   const formData = new FormData()
