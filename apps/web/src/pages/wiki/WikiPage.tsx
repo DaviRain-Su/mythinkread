@@ -2,6 +2,14 @@ import { useState } from 'react'
 import { Icon, formatCID } from '../../components/mtr/primitives'
 import { useLangStore } from '../../stores/langStore'
 import WikiGraph3D from '../../components/mtr/WikiGraph3D'
+import React from 'react'
+
+// Kumo UI Date Picker (lazy loaded)
+const DatePicker = React.lazy(() =>
+  import('@cloudflare/kumo').then((m) => ({
+    default: m.DatePicker as unknown as React.ComponentType<any>,
+  }))
+)
 
 const WIKI_TREE = [
   ['concepts/', ['Homesickness', 'Seven-word form', 'Coordinates', 'Measurement']],
@@ -48,6 +56,8 @@ export default function WikiPage() {
   const [activeToc, setActiveToc] = useState(0)
   const [selectedDir, setSelectedDir] = useState('concepts/')
   const [selectedItem, setSelectedItem] = useState('Homesickness')
+  const [selectedDate, setSelectedDate] = useState<Date | null>(null)
+  const [showDatePicker, setShowDatePicker] = useState(false)
 
   return (
     <div className="screen mtr" style={{ display: 'flex', flexDirection: 'column', height: '100vh', overflow: 'hidden', background: 'var(--paper-2)' }}>
@@ -90,6 +100,25 @@ export default function WikiPage() {
           <button className="btn ghost" style={{ width: '100%', marginTop: 12, fontSize: 11 }}>
             <Icon name="download" size={10} /> &nbsp;{lang === 'zh' ? '导出到 Obsidian' : 'Export to Obsidian'}
           </button>
+          <button
+            className="btn ghost"
+            style={{ width: '100%', marginTop: 8, fontSize: 11 }}
+            onClick={() => setShowDatePicker(true)}
+          >
+            <Icon name="calendar" size={10} /> &nbsp;{lang === 'zh' ? '时间线日期' : 'Timeline Date'}
+          </button>
+          {showDatePicker && (
+            <React.Suspense fallback={<div style={{ height: 40, background: 'var(--paper-2)', borderRadius: 2, marginTop: 8 }} />}>
+              <DatePicker
+                value={selectedDate}
+                onChange={(date: Date) => {
+                  setSelectedDate(date)
+                  setShowDatePicker(false)
+                }}
+                placeholder={lang === 'zh' ? '选择日期...' : 'Select date...'}
+              />
+            </React.Suspense>
+          )}
           <button
             className="btn accent"
             style={{ width: '100%', marginTop: 8, fontSize: 11 }}
