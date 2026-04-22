@@ -13,6 +13,7 @@ import {
   type AIType,
   type CoverBook,
 } from '../components/mtr/primitives'
+import BookShelf3D from '../components/mtr/BookShelf3D'
 
 interface ApiBook {
   id: string
@@ -507,6 +508,26 @@ export default function HomePage() {
           <Icon name="grid" size={11} /> Grid &nbsp;/&nbsp;{' '}
           <Icon name="list" size={11} /> List
         </div>
+      </section>
+
+      {/* 3D Bookshelf */}
+      <section style={{ maxWidth: 1280, margin: '0 auto', padding: '20px 44px' }}>
+        <BookShelf3D
+          books={filtered.slice(0, 8).map((b, i) => ({
+            id: b.id,
+            title: b.title,
+            author: b.author,
+            color: b.coverTop || '#8a5f3a',
+            aiPct: b.aiPct,
+            height: 1.5 + (b.words / 200000) * 1.5,
+            position: [
+              (i % 4) * 1.2 - 1.8,
+              0.75 + (b.words / 200000) * 0.75,
+              Math.floor(i / 4) * 0.5 - 0.25,
+            ] as [number, number, number],
+          }))}
+          onBookClick={(book) => navigate(`/books/${book.id}`)}
+        />
       </section>
 
       {/* Grid */}

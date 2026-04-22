@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useRef, useState } from 'react'
 import { useNavigate, useParams } from 'react-router-dom'
 import { Icon } from '../components/mtr/primitives'
+import BookFlip3D from '../components/mtr/BookFlip3D'
 
 interface Chapter {
   id: string
@@ -48,6 +49,7 @@ export default function BookReaderPage() {
   const [annotations, setAnnotations] = useState<Annotation[]>([])
   const [selectedText, setSelectedText] = useState('')
   const [selectionRange, setSelectionRange] = useState<{ start: number; end: number } | null>(null)
+  const [show3DFlip, setShow3DFlip] = useState(false)
   const [showAnnotationPanel, setShowAnnotationPanel] = useState(false)
   const [annotationNote, setAnnotationNote] = useState('')
   const [fontKey, setFontKey] = useState<FontKey>('serif')
@@ -277,8 +279,30 @@ export default function BookReaderPage() {
               {d === 'compact' ? 'Tight' : d === 'spacious' ? 'Roomy' : 'Medium'}
             </button>
           ))}
+          <div style={{ width: 1, height: 20, background: 'var(--rule)' }} />
+          <button
+            className="chip"
+            onClick={() => setShow3DFlip(!show3DFlip)}
+            style={{
+              background: show3DFlip ? 'var(--terracotta)' : 'var(--paper)',
+              color: show3DFlip ? '#fff' : 'var(--ink-2)',
+              border: '1px solid var(--rule)',
+              cursor: 'pointer',
+            }}
+          >
+            3D
+          </button>
         </div>
       </div>
+
+      {/* 3D Flip Animation */}
+      {show3DFlip && book && (
+        <BookFlip3D
+          bookTitle={book.title}
+          bookColor="#8a5f3a"
+          onClose={() => setShow3DFlip(false)}
+        />
+      )}
 
       {/* Reading area */}
       <div

@@ -26,7 +26,6 @@ import collaborateRoutes from './routes/collaborate'
 import ttsRoutes from './routes/tts'
 import fsrsRoutes from './routes/fsrs'
 import wikiRoutes from './routes/wiki'
-import voiceRoutes from './routes/voice'
 
 export interface Env {
   DB: D1Database
@@ -73,6 +72,5 @@ app.route('/api/collaborate', collaborateRoutes)
 app.route('/api/tts', ttsRoutes)
 app.route('/api/fsrs', fsrsRoutes)
 app.route('/api/wiki', wikiRoutes)
-app.route('/api/voice', voiceRoutes)
 
 export default app
