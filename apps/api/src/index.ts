@@ -1,6 +1,7 @@
 import { Hono } from 'hono'
 import { cors } from 'hono/cors'
 import { logger } from 'hono/logger'
+import { handleBookProcessing } from './queue/book-processing'
 import authRoutes from './routes/auth'
 import aiRoutes from './routes/ai'
 import bookRoutes from './routes/books'
@@ -73,4 +74,38 @@ app.route('/api/tts', ttsRoutes)
 app.route('/api/fsrs', fsrsRoutes)
 app.route('/api/wiki', wikiRoutes)
 
-export default app
+// Cloudflare Queue message envelope shape for this worker.
+type BookPublishMessage = { type: 'publish_book'; bookId: string; userId: string }
+
+/**
+ * Queue consumer for the `book-processing` queue.
+ *
+ * Each message is processed independently: on success we `ack()` so the
+ * message is removed; on failure we `retry()` so Cloudflare Queues will
+ * redeliver (respecting max_retries) and ultimately route to the
+ * `book-processing-dlq` dead-letter queue declared in `wrangler.toml`.
+ */
+async function queue(
+  batch: MessageBatch<BookPublishMessage>,
+  env: Env,
+  _ctx: ExecutionContext
+): Promise<void> {
+  for (const msg of batch.messages) {
+    try {
+      if (msg.body && msg.body.type === 'publish_book') {
+        await handleBookProcessing(env, msg.body)
+      } else {
+        console.warn('Unknown queue message type, acking:', msg.body)
+      }
+      msg.ack()
+    } catch (err) {
+      console.error(`Queue message ${msg.id} failed, will retry:`, err)
+      msg.retry()
+    }
+  }
+}
+
+export default {
+  fetch: app.fetch,
+  queue
+}

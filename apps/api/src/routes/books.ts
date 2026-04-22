@@ -184,7 +184,10 @@ books.post('/:id/chapters', zValidator('json', chapterSchema), async (c) => {
     const result = await db.prepare(`
       SELECT MAX(idx) as max_idx FROM chapters WHERE book_id = ?
     `).bind(bookId).first()
-    chapterIdx = ((result?.max_idx as number) || -1) + 1
+    // MAX() returns NULL (→ null) when no rows exist. Note: `0 || -1` is `-1`
+    // in JS, so we must branch explicitly on null/undefined.
+    const maxIdx = result?.max_idx as number | null | undefined
+    chapterIdx = (maxIdx === null || maxIdx === undefined) ? 0 : maxIdx + 1
   }
 
   const wordCount = content.length
@@ -196,7 +199,7 @@ books.post('/:id/chapters', zValidator('json', chapterSchema), async (c) => {
   await db.prepare(`
     INSERT INTO chapters (id, book_id, idx, title, content_cid, word_count, created_at)
     VALUES (?, ?, ?, ?, ?, ?, ?)
-  `).bind(chapterId, bookId, chapterIdx, title, '', wordCount, now).run()
+  `).bind(chapterId, bookId, chapterIdx, title, null, wordCount, now).run()
 
   // Update book chapter count and word count
   await db.prepare(`
@@ -272,9 +275,13 @@ books.get('/:id/read/:chapterId', async (c) => {
   const bookId = c.req.param('id')
   const chapterId = c.req.param('chapterId')
 
-  // Get chapter info (allow reading draft books for the author)
+  // Get chapter info (allow reading draft books for the author).
+  // `c.content_cid` / `c.arweave_tx` are the per-chapter storage pointers
+  // populated by the book-processing queue consumer at publish time.
   const chapter = await db.prepare(`
-    SELECT c.*, b.structured_cid, b.arweave_tx, b.status, b.creator_id
+    SELECT c.id, c.idx, c.title, c.word_count,
+           c.content_cid AS chapter_cid, c.arweave_tx AS chapter_arweave_tx,
+           b.status, b.creator_id
     FROM chapters c
     JOIN books b ON c.book_id = b.id
     WHERE c.id = ? AND c.book_id = ?
@@ -311,18 +318,16 @@ books.get('/:id/read/:chapterId', async (c) => {
     // For draft books, get content from KV
     if (chapter.status !== 'published') {
       const draftContent = await c.env.KV.get(`chapter:draft:${chapterId}`)
-      if (draftContent) {
-        content = draftContent
-      } else {
-        // Fallback: return empty content for draft chapters without KV storage
-        content = ''
-      }
+      content = draftContent ?? ''
     } else {
-      // For published books, use multi-level fallback
+      // For published books, use the per-chapter multi-level fallback
+      //  1. KV cache key `chapter:<id>` (populated by the consumer on publish)
+      //  2. IPFS (Pinata) via chapter.content_cid
+      //  3. Arweave via chapter.arweave_tx
       const { getContent } = await import('../lib/content')
       content = await getContent(c.env, {
-        cid: chapter.content_cid as string | undefined,
-        arweaveTx: chapter.arweave_tx as string | undefined,
+        cid: (chapter.chapter_cid as string | null) ?? undefined,
+        arweaveTx: (chapter.chapter_arweave_tx as string | null) ?? undefined,
         cacheKey: `chapter:${chapterId}`
       })
     }

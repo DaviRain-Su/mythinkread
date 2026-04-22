@@ -52,12 +52,15 @@ CREATE TABLE IF NOT EXISTS books (
 );
 
 -- Chapters table
+-- content_cid is nullable: drafts live only in KV (chapter:draft:<id>) until
+-- the book is published, at which point the queue consumer fills in the real
+-- IPFS CID and Arweave transaction ID.
 CREATE TABLE IF NOT EXISTS chapters (
     id TEXT PRIMARY KEY,
     book_id TEXT NOT NULL,
     idx INTEGER NOT NULL,
     title TEXT NOT NULL,
-    content_cid TEXT NOT NULL,
+    content_cid TEXT,
     arweave_tx TEXT,
     word_count INTEGER DEFAULT 0,
     created_at INTEGER NOT NULL,

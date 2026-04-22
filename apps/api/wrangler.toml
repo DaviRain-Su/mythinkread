@@ -22,6 +22,13 @@ bucket_name = "mythinkread-assets"
 binding = "QUEUE"
 queue = "book-processing"
 
+[[queues.consumers]]
+queue = "book-processing"
+max_batch_size = 10
+max_batch_timeout = 5
+max_retries = 3
+dead_letter_queue = "book-processing-dlq"
+
 [ai]
 binding = "AI"
 remote = true
