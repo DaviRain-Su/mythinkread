@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useRef, useState } from 'react'
 import { useNavigate, useParams } from 'react-router-dom'
+import { useTranslation } from 'react-i18next'
 import { Icon } from '../components/mtr/primitives'
 import BookFlip3D from '../components/mtr/BookFlip3D'
 import { useToast } from '../components/KumoToastProvider'
@@ -70,6 +71,7 @@ export default function BookReaderPage() {
   const [fontKey, setFontKey] = useState<FontKey>('serif')
   const [density, setDensity] = useState<'compact' | 'comfortable' | 'spacious'>('comfortable')
   const { showToast } = useToast()
+  const { t } = useTranslation()
   const [showExitDialog, setShowExitDialog] = useState(false)
 
   useEffect(() => {
@@ -169,9 +171,9 @@ export default function BookReaderPage() {
       setSelectionRange(null)
       window.getSelection()?.removeAllRanges()
       void loadAnnotations(currentChapter.id)
-      showToast('Annotation saved successfully', 'success')
+      showToast(t('reader.annotationSaved'), 'success')
     } catch (err) {
-      showToast(err instanceof Error ? err.message : 'Failed to create annotation', 'error')
+      showToast(err instanceof Error ? err.message : t('reader.annotationError'), 'error')
     }
   }
 
@@ -312,7 +314,7 @@ export default function BookReaderPage() {
           </button>
           <div style={{ width: 1, height: 20, background: 'var(--rule)' }} />
           <React.Suspense fallback={null}>
-            <KumoTooltip content="Exit reader">
+            <KumoTooltip content={t('reader.exit')}>
               <button
                 className="chip"
                 onClick={() => setShowExitDialog(true)}
@@ -336,12 +338,12 @@ export default function BookReaderPage() {
           <KumoDialog
             open={showExitDialog}
             onOpenChange={setShowExitDialog}
-            title="Exit Reader"
-            description="Your reading progress has been saved. Are you sure you want to exit?"
+            title={t('reader.exit')}
+            description={t('reader.exitConfirm')}
             onConfirm={() => {
               setShowExitDialog(false)
               navigate(`/books/${book.id}`)
-              showToast('Reading progress saved', 'success')
+              showToast(t('reader.annotationSaved'), 'success')
             }}
             onCancel={() => setShowExitDialog(false)}
           />

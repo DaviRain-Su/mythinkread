@@ -1,9 +1,9 @@
 import { useAuthStore } from '../stores/authStore'
-import { useLangStore } from '../stores/langStore'
 import { useNavigate, useLocation } from 'react-router-dom'
 import NotificationBell from './NotificationBell'
 import { Icon } from './mtr/primitives'
 import React, { useState, useCallback } from 'react'
+import { useTranslation } from 'react-i18next'
 
 // Kumo UI Command Palette type
 interface CommandPaletteProps {
@@ -21,25 +21,25 @@ const CommandPalette = React.lazy(() =>
   }))
 )
 
-const NAV_ITEMS: Array<[string, string, string, string]> = [
-  ['/books', 'discover', 'Discover', '发现'],
-  ['/studio', 'studio', 'Studio', '写作台'],
-  ['/social', 'social', 'Club', '书友圈'],
-  ['/wiki', 'wiki', 'Wiki', '知识宇宙'],
-  ['/dashboard', 'data', 'Data', '数据'],
-  ['/rankings', 'ranks', 'Ranks', '榜单'],
-  ['/booklists', 'lists', 'Lists', '书单'],
-  ['/feed', 'feed', 'Feed', '动态'],
-  ['/recommendations', 'recs', 'For you', '推荐'],
-  ['/public-domain', 'archive', 'Archive', '公版'],
-  ['/fsrs', 'fsrs', 'SRS', '记忆'],
+const NAV_ITEMS: Array<[string, string]> = [
+  ['/books', 'discover'],
+  ['/studio', 'studio'],
+  ['/social', 'social'],
+  ['/wiki', 'wiki'],
+  ['/dashboard', 'data'],
+  ['/rankings', 'rankings'],
+  ['/booklists', 'lists'],
+  ['/feed', 'feed'],
+  ['/recommendations', 'recs'],
+  ['/public-domain', 'archive'],
+  ['/fsrs', 'fsrs'],
 ]
 
 export default function Navbar() {
   const navigate = useNavigate()
   const location = useLocation()
   const { user, isAuthenticated, logout } = useAuthStore()
-  const { lang, toggle } = useLangStore()
+  const { t, i18n } = useTranslation()
   const [commandOpen, setCommandOpen] = useState(false)
 
   const isActive = (path: string) =>
@@ -50,8 +50,13 @@ export default function Navbar() {
     setCommandOpen(false)
   }, [navigate])
 
-  const commandItems = NAV_ITEMS.map(([path, _key, en, zh]) => ({
-    label: lang === 'zh' ? zh : en,
+  const toggleLang = () => {
+    const next = i18n.language === 'zh' ? 'en' : 'zh'
+    i18n.changeLanguage(next)
+  }
+
+  const commandItems = NAV_ITEMS.map(([path, key]) => ({
+    label: t(`nav.${key}`),
     value: path,
   }))
 
@@ -106,7 +111,7 @@ export default function Navbar() {
 
         {/* Nav */}
         <nav style={{ display: 'flex', gap: 2, flex: 1, marginLeft: 14, alignItems: 'center' }}>
-          {NAV_ITEMS.map(([path, key, en, zh]) => {
+          {NAV_ITEMS.map(([path, key]) => {
             const active = isActive(path)
             return (
               <button
@@ -131,7 +136,7 @@ export default function Navbar() {
                   gap: 6,
                 }}
               >
-                <span>{lang === 'zh' ? zh : en}</span>
+                <span>{t(`nav.${key}`)}</span>
               </button>
             )
           })}
@@ -156,7 +161,7 @@ export default function Navbar() {
         >
           <Icon name="search" size={13} />
           <span className="sans" style={{ fontSize: 12 }}>
-            {lang === 'zh' ? '搜索书籍、作者、CID…' : 'Search books, authors, CIDs…'}
+            {t('common.search')}
           </span>
           <span className="mono" style={{ marginLeft: 'auto', fontSize: 10, opacity: 0.7 }}>
             ⌘K
@@ -170,7 +175,7 @@ export default function Navbar() {
               onOpenChange={setCommandOpen}
               items={commandItems}
               onSelect={handleCommandSelect}
-              placeholder={lang === 'zh' ? '搜索页面...' : 'Search pages...'}
+              placeholder={t('common.search')}
             />
           </React.Suspense>
         )}
@@ -195,13 +200,13 @@ export default function Navbar() {
           ].map(([k, lbl]) => (
             <div
               key={k}
-              onClick={() => toggle()}
+              onClick={() => toggleLang()}
               style={{
                 padding: '6px 12px',
                 cursor: 'pointer',
-                background: lang === k ? 'var(--ink)' : 'transparent',
-                color: lang === k ? 'var(--paper)' : 'var(--ink-2)',
-                fontWeight: lang === k ? 600 : 400,
+                background: i18n.language === k ? 'var(--ink)' : 'transparent',
+                color: i18n.language === k ? 'var(--paper)' : 'var(--ink-2)',
+                fontWeight: i18n.language === k ? 600 : 400,
                 fontFamily:
                   k === 'zh'
                     ? "var(--font-cjk, 'Noto Serif SC', serif)"
@@ -221,7 +226,7 @@ export default function Navbar() {
               className="btn accent"
               style={{ fontSize: 12, padding: '7px 12px' }}
             >
-              <Icon name="pen" size={11} /> Create
+              <Icon name="pen" size={11} /> {t('common.create')}
             </button>
             <NotificationBell />
             <button
@@ -253,7 +258,7 @@ export default function Navbar() {
               className="chip"
               style={{ cursor: 'pointer' }}
             >
-              Sign out
+              {t('common.signOut')}
             </button>
           </div>
         ) : (
@@ -270,14 +275,14 @@ export default function Navbar() {
                 padding: '6px 4px',
               }}
             >
-              Sign in
+              {t('common.signIn')}
             </button>
             <button
               onClick={() => navigate('/register')}
               className="btn accent"
               style={{ fontSize: 12, padding: '7px 14px' }}
             >
-              Join
+              {t('common.join')}
             </button>
           </div>
         )}

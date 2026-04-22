@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { useLangStore } from '../../stores/langStore'
+import { useTranslation } from 'react-i18next'
 
 interface MemoryCard {
   id: string
@@ -27,7 +27,7 @@ interface ReviewStats {
 
 export default function FSRSReviewPage() {
   const navigate = useNavigate()
-  const { lang } = useLangStore()
+  const { t } = useTranslation()
   const [cards, setCards] = useState<MemoryCard[]>([])
   const [stats, setStats] = useState<ReviewStats | null>(null)
   const [currentIndex, setCurrentIndex] = useState(0)
@@ -88,7 +88,7 @@ export default function FSRSReviewPage() {
   if (loading) {
     return (
       <div style={centerStyle}>
-        <div className="eyebrow">{lang === 'zh' ? '加载中…' : 'Loading…'}</div>
+        <div className="eyebrow">{t('common.loading')}</div>
       </div>
     )
   }
@@ -97,7 +97,7 @@ export default function FSRSReviewPage() {
     return (
       <div style={{ ...centerStyle, flexDirection: 'column', gap: 20 }}>
         <div className="display" style={{ fontSize: 32 }}>
-          {lang === 'zh' ? '今日复习完成' : "Today's review complete"}
+          {t('fsrs.completed')}
         </div>
         {stats && (
           <div
@@ -109,17 +109,17 @@ export default function FSRSReviewPage() {
             }}
           >
             <StatBox
-              label={lang === 'zh' ? '总卡片' : 'Total'}
+              label={t('fsrs.totalCards')}
               value={stats.total_cards}
             />
             <StatBox
-              label={lang === 'zh' ? '明日到期' : 'Due tomorrow'}
+              label={t('fsrs.dueTomorrow')}
               value={stats.due_tomorrow}
             />
           </div>
         )}
         <button className="btn accent" onClick={() => navigate('/')}>
-          {lang === 'zh' ? '返回首页' : 'Back to home'}
+          {t('common.backToHome')}
         </button>
       </div>
     )
@@ -151,10 +151,10 @@ export default function FSRSReviewPage() {
       >
         <div>
           <div className="eyebrow">
-            {lang === 'zh' ? '间隔重复 · FSRS' : 'Spaced Repetition · FSRS'}
+            {t('fsrs.title')} · FSRS
           </div>
           <div className="display" style={{ fontSize: 20, marginTop: 4 }}>
-            {lang === 'zh' ? '今日复习' : "Today's Review"}
+            {t('fsrs.startReview')}
           </div>
         </div>
         <div style={{ display: 'flex', alignItems: 'center', gap: 14 }}>
@@ -247,7 +247,7 @@ export default function FSRSReviewPage() {
               }}
             >
               <div className="eyebrow" style={{ marginBottom: 8 }}>
-                {lang === 'zh' ? '答案' : 'Answer'}
+                {t('fsrs.answer')}
               </div>
               <div style={{ fontSize: 16, lineHeight: 1.6, color: 'var(--ink-2)' }}>
                 {card.back}
@@ -274,7 +274,7 @@ export default function FSRSReviewPage() {
               R: {(card.fsrs_r * 100).toFixed(0)}%
             </div>
             <div className="mono" style={{ color: 'var(--ink-3)' }}>
-              {lang === 'zh' ? '复习' : 'Reps'}: {card.fsrs_reps}
+              {t('fsrs.reps')}: {card.fsrs_reps}
             </div>
           </div>
 
@@ -285,30 +285,30 @@ export default function FSRSReviewPage() {
               style={{ width: '100%', justifyContent: 'center' }}
               onClick={() => setShowAnswer(true)}
             >
-              {lang === 'zh' ? '显示答案' : 'Show answer'}
+              {t('fsrs.showAnswer')}
             </button>
           ) : (
             <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr 1fr', gap: 10 }}>
               <GradeButton
-                label={lang === 'zh' ? '忘记' : 'Again'}
+                label={t('fsrs.again')}
                 sublabel={`<1d`}
                 color="var(--crimson)"
                 onClick={() => handleGrade(1)}
               />
               <GradeButton
-                label={lang === 'zh' ? '困难' : 'Hard'}
+                label={t('fsrs.hard')}
                 sublabel={`~${Math.round(card.fsrs_s * 1.2)}d`}
                 color="var(--gold)"
                 onClick={() => handleGrade(2)}
               />
               <GradeButton
-                label={lang === 'zh' ? '良好' : 'Good'}
+                label={t('fsrs.good')}
                 sublabel={`~${Math.round(card.fsrs_s * 2.5)}d`}
                 color="var(--terracotta)"
                 onClick={() => handleGrade(3)}
               />
               <GradeButton
-                label={lang === 'zh' ? '简单' : 'Easy'}
+                label={t('fsrs.easy')}
                 sublabel={`~${Math.round(card.fsrs_s * 4)}d`}
                 color="var(--moss)"
                 onClick={() => handleGrade(4)}

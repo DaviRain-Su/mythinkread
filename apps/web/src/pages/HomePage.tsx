@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { useLangStore } from '../stores/langStore'
+import { useTranslation } from 'react-i18next'
 import {
   AIRatioBar,
   AI_BADGES,
@@ -212,7 +212,7 @@ type FilterKey = 'all' | AIType
 
 export default function HomePage() {
   const navigate = useNavigate()
-  const { lang } = useLangStore()
+  const { t, i18n } = useTranslation()
   const [books, setBooks] = useState<DisplayBook[]>(FALLBACK_BOOKS)
   const [filter, setFilter] = useState<FilterKey>('all')
   const [loading, setLoading] = useState(true)
@@ -279,7 +279,7 @@ export default function HomePage() {
                 textWrap: 'balance',
               }}
             >
-              {lang === 'zh' ? (
+              {i18n.language === 'zh' ? (
                 <>
                   机器之
                   <span style={{ fontStyle: 'italic', color: 'var(--terracotta)' }}>书</span>
@@ -293,7 +293,7 @@ export default function HomePage() {
               )}
             </h1>
             <div
-              className={lang === 'zh' ? 'cjk' : ''}
+              className={i18n.language === 'zh' ? 'cjk' : ''}
               style={{
                 fontSize: 18,
                 color: 'var(--ink-3)',
@@ -301,30 +301,20 @@ export default function HomePage() {
                 letterSpacing: '.08em',
               }}
             >
-              {lang === 'zh'
-                ? '一个 AI 原生的文学图书馆。'
-                : 'An AI-native literary library.'}
+              {t('home.heroSubtitle')}
             </div>
           </div>
           <aside style={{ width: 240 }}>
             <div className="eyebrow" style={{ marginBottom: 10 }}>
-              {lang === 'zh' ? '本周数据' : 'Week in numbers'}
+              {t('home.weekStats')}
             </div>
             <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 14 }}>
-              {(lang === 'zh'
-                ? [
-                    ['2,184', '新作品'],
-                    ['847K', '阅读分钟'],
-                    ['48.3%', '人机比例'],
-                    ['12,041', 'CID 铸造'],
-                  ]
-                : [
-                    ['2,184', 'New titles'],
-                    ['847K', 'Minutes read'],
-                    ['48.3%', 'Human·machine'],
-                    ['12,041', 'CIDs minted'],
-                  ]
-              ).map(([v, label]) => (
+              {([
+                ['2,184', t('home.newTitles')],
+                ['847K', t('home.minutesRead')],
+                ['48.3%', t('home.humanMachine')],
+                ['12,041', t('home.cidsMinted')],
+              ]).map(([v, label]) => (
                 <div key={label}>
                   <div className="display" style={{ fontSize: 26, lineHeight: 1 }}>
                     {v}
@@ -364,7 +354,7 @@ export default function HomePage() {
         >
           <Cover book={featured} size="xl" />
           <div>
-            <div className="eyebrow">{lang === 'zh' ? '本周精选' : "This week's picked read"}</div>
+            <div className="eyebrow">{t('home.featured')}</div>
             <div style={{ marginTop: 10 }}>
               <BilingualTitle en={featured.title} zh={featured.zh} size={42} />
             </div>
@@ -378,7 +368,7 @@ export default function HomePage() {
                 textTransform: 'uppercase',
               }}
             >
-              {lang === 'zh'
+              {i18n.language === 'zh'
                 ? `${featured.author} · ${featured.chapters} 章 · ${featured.words.toLocaleString()} 字`
                 : `By ${featured.author} · ${featured.chapters} ch · ${featured.words.toLocaleString()} w`}
             </div>
@@ -408,13 +398,13 @@ export default function HomePage() {
                 className="btn accent"
                 onClick={() => navigate(`/books/${featured.id}`)}
               >
-                <Icon name="book" size={12} /> {lang === 'zh' ? '开始阅读' : 'Begin reading'}
+                <Icon name="book" size={12} /> {t('home.beginReading')}
               </button>
               <button
                 className="btn ghost"
                 onClick={() => navigate(`/books/${featured.id}`)}
               >
-                {lang === 'zh' ? '详情' : 'Details'}
+                {t('home.details')}
               </button>
               <Badge type={featured.type} />
               <AIRatioBar pct={featured.aiPct} />
@@ -422,7 +412,7 @@ export default function HomePage() {
             </div>
           </div>
           <div style={{ borderLeft: '1px solid var(--rule)', paddingLeft: 22 }}>
-            <div className="eyebrow">{lang === 'zh' ? 'AI 比例' : 'AI · blend'}</div>
+            <div className="eyebrow">{t('home.aiBlend')}</div>
             <div style={{ display: 'flex', alignItems: 'baseline', gap: 6, marginTop: 6 }}>
               <div
                 className="display"
@@ -431,17 +421,17 @@ export default function HomePage() {
                 {featured.aiPct}
               </div>
               <div className="mono" style={{ fontSize: 12, color: 'var(--ink-3)' }}>
-                % {lang === 'zh' ? '机器' : 'machine'}
+                % {t('home.machine')}
               </div>
             </div>
             <div
               className="mono"
               style={{ fontSize: 10, color: 'var(--ink-3)', marginTop: 4 }}
             >
-              {100 - featured.aiPct}% {lang === 'zh' ? '人工编辑 · 4,120 次修订' : 'human edit · 4,120 revisions'}
+              {100 - featured.aiPct}% {t('home.humanEdit')} · 4,120 {t('home.revisions')}
             </div>
             <hr className="rule-h" style={{ margin: '18px 0' }} />
-            <div className="eyebrow">{lang === 'zh' ? '编辑评语' : "Editor's remark"}</div>
+            <div className="eyebrow">{t('home.editorRemark')}</div>
             <p
               style={{
                 fontSize: 13,
@@ -452,7 +442,7 @@ export default function HomePage() {
                 fontFamily: 'var(--font-body)',
               }}
             >
-              &ldquo;{lang === 'zh'
+              &ldquo;{i18n.language === 'zh'
                 ? '读像一个数学家不小心讲出的鬼故事。'
                 : 'Reads like a ghost story that a mathematician has accidentally told.'}&rdquo;
             </p>
@@ -460,7 +450,7 @@ export default function HomePage() {
               className="mono"
               style={{ fontSize: 10, color: 'var(--ink-4)', marginTop: 8 }}
             >
-              — WENLIN, {lang === 'zh' ? '主编' : 'CH. EDITOR'}
+              — WENLIN, {t('home.editor')}
             </div>
           </div>
         </section>
@@ -479,29 +469,20 @@ export default function HomePage() {
           flexWrap: 'wrap',
         }}
       >
-        <div className="eyebrow">{lang === 'zh' ? '按 AI 比例筛选' : 'Filter by AI-blend'}</div>
-        {(
-          lang === 'zh'
-            ? ([
-                ['all', '全部', null],
-                ['pure', '纯 AI', 'pure'],
-                ['light', '轻度人机', 'light'],
-                ['heavy', '重度人机', 'heavy'],
-              ] as Array<[FilterKey, string, AIType | null]>)
-            : ([
-                ['all', 'All', null],
-                ['pure', 'Pure AI', 'pure'],
-                ['light', 'Light collab', 'light'],
-                ['heavy', 'Heavy human', 'heavy'],
-              ] as Array<[FilterKey, string, AIType | null]>)
-        ).map(([k, lbl, t]) => (
+        <div className="eyebrow">{t('home.filterByAI')}</div>
+        {([
+          ['all', t('home.all'), null],
+          ['pure', t('home.pureAI'), 'pure'],
+          ['light', t('home.lightCollab'), 'light'],
+          ['heavy', t('home.heavyHuman'), 'heavy'],
+        ] as Array<[FilterKey, string, AIType | null]>).map(([k, lbl, ty]) => (
           <button
             key={k}
             className={`chip ${filter === k ? 'active' : ''}`}
             onClick={() => setFilter(k)}
             style={{ border: 'none', fontFamily: 'inherit' }}
           >
-            {t && <span className="dot" style={{ background: AI_BADGES[t].color }} />}
+            {ty && <span className="dot" style={{ background: AI_BADGES[ty].color }} />}
             {lbl}
           </button>
         ))}
@@ -580,10 +561,10 @@ export default function HomePage() {
                   margin: 0,
                 }}
               >
-                {lang === 'zh' ? '新入档' : 'New from the archive'}
+                {t('home.newFromArchive')}
               </h2>
               <div className="mono" style={{ fontSize: 10, color: 'var(--ink-3)' }}>
-                {filtered.length} TITLES
+                {filtered.length} {t('home.titles').toUpperCase()}
               </div>
             </header>
 
@@ -640,7 +621,7 @@ export default function HomePage() {
                     marginBottom: 2,
                   }}
                 >
-                  {lang === 'zh' && b.zh ? b.zh : b.title}
+                  {i18n.language === 'zh' && b.zh ? b.zh : b.title}
                 </div>
                 <div
                   className="mono"
@@ -652,7 +633,7 @@ export default function HomePage() {
                     textTransform: 'uppercase',
                   }}
                 >
-                  {lang === 'zh' ? b.author : `By ${b.author}`}
+                  {i18n.language === 'zh' ? b.author : `By ${b.author}`}
                 </div>
                 <p
                   style={{

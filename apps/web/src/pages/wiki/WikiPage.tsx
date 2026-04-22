@@ -1,6 +1,6 @@
 import { useState } from 'react'
 import { Icon, formatCID } from '../../components/mtr/primitives'
-import { useLangStore } from '../../stores/langStore'
+import { useTranslation } from 'react-i18next'
 import WikiGraph3D from '../../components/mtr/WikiGraph3D'
 import React from 'react'
 
@@ -52,7 +52,7 @@ const APPEARANCES = [
 
 
 export default function WikiPage() {
-  const { lang } = useLangStore()
+  const { t } = useTranslation()
   const [activeToc, setActiveToc] = useState(0)
   const [selectedDir, setSelectedDir] = useState('concepts/')
   const [selectedItem, setSelectedItem] = useState('Homesickness')
@@ -98,14 +98,14 @@ export default function WikiPage() {
           ))}
 
           <button className="btn ghost" style={{ width: '100%', marginTop: 12, fontSize: 11 }}>
-            <Icon name="download" size={10} /> &nbsp;{lang === 'zh' ? '导出到 Obsidian' : 'Export to Obsidian'}
+            <Icon name="download" size={10} /> &nbsp;{t('wiki.exportToObsidian')}
           </button>
           <button
             className="btn ghost"
             style={{ width: '100%', marginTop: 8, fontSize: 11 }}
             onClick={() => setShowDatePicker(true)}
           >
-            <Icon name="calendar" size={10} /> &nbsp;{lang === 'zh' ? '时间线日期' : 'Timeline Date'}
+            <Icon name="calendar" size={10} /> &nbsp;{t('wiki.timelineDate')}
           </button>
           {showDatePicker && (
             <React.Suspense fallback={<div style={{ height: 40, background: 'var(--paper-2)', borderRadius: 2, marginTop: 8 }} />}>
@@ -115,7 +115,7 @@ export default function WikiPage() {
                   setSelectedDate(date)
                   setShowDatePicker(false)
                 }}
-                placeholder={lang === 'zh' ? '选择日期...' : 'Select date...'}
+                placeholder={t('wiki.selectDate')}
               />
             </React.Suspense>
           )}
@@ -138,11 +138,11 @@ export default function WikiPage() {
                   context: `${selectedDir}${selectedItem}`,
                 }),
               })
-                .then(() => alert(lang === 'zh' ? '已添加到记忆卡片！' : 'Added to memory cards!'))
+                .then(() => alert(t('wiki.addedToCards')))
                 .catch(console.error)
             }}
           >
-            <Icon name="sparkle" size={10} /> &nbsp;{lang === 'zh' ? '加入记忆卡片' : 'Add to SRS'}
+            <Icon name="sparkle" size={10} /> &nbsp;{t('wiki.addToSRS')}
           </button>
         </aside>
 
