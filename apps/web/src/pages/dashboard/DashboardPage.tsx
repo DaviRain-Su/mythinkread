@@ -1,13 +1,6 @@
 import { useMemo, useState } from 'react'
+import { useTranslation } from 'react-i18next'
 import { Icon, Cover, type CoverBook } from '../../components/mtr/primitives'
-import React from 'react'
-
-// Kumo UI Charts (lazy loaded)
-const TimeseriesChart = React.lazy(() =>
-  import('@cloudflare/kumo').then((m) => ({
-    default: m.TimeseriesChart as unknown as React.ComponentType<any>,
-  }))
-)
 
 const BOOKS: CoverBook[] = [
   { id: 'mirror-of-moon', title: 'The Mirror of Moonfall', author: 'Aster-07 × Yu Wen', published: '2026·03' },
@@ -50,6 +43,7 @@ function generateHeatmapData(): number[][] {
 }
 
 export default function DashboardPage() {
+  const { t } = useTranslation()
   const [days] = useState(generateHeatmapData)
   const [hoveredCell, setHoveredCell] = useState<string | null>(null)
 
@@ -65,12 +59,12 @@ export default function DashboardPage() {
         {/* Header */}
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-end', marginBottom: 28 }}>
           <div>
-            <div className="eyebrow">Your reading · Year in Review · 2026</div>
+            <div className="eyebrow">{t('dashboard.yearReview')}</div>
             <div className="display" style={{ fontSize: 54, fontWeight: 300, letterSpacing: -1.5, marginTop: 6 }}>
-              You have read for <span style={{ fontStyle: 'italic', color: 'var(--terracotta)' }}>142 hours</span>.
+              {t('dashboard.hoursRead', { hours: 142 })}
             </div>
             <div className="cjk" style={{ fontSize: 18, color: 'var(--ink-3)', marginTop: 4 }}>
-              42 本 · 1,204,000 字 · 2,482 批注 · 18 导出
+              {t('dashboard.statsSummary', { books: 42, words: '1,204,000', notes: 2482, exports: 18 })}
             </div>
           </div>
           <div style={{ display: 'flex', gap: 10 }}>
@@ -221,34 +215,6 @@ export default function DashboardPage() {
                   </div>
                 </div>
               </div>
-            </div>
-
-            <hr className="rule-h" style={{ margin: '32px 0' }} />
-
-            {/* Reading Timeseries Chart */}
-            <div className="eyebrow">Reading activity over time</div>
-            <div style={{ marginTop: 14, height: 200 }}>
-              <React.Suspense fallback={<div style={{ height: 200, background: 'var(--paper-2)', borderRadius: 2 }} />}>
-                <TimeseriesChart
-                  data={[
-                    { date: '2026-01-01', value: 45 },
-                    { date: '2026-01-02', value: 62 },
-                    { date: '2026-01-03', value: 30 },
-                    { date: '2026-01-04', value: 85 },
-                    { date: '2026-01-05', value: 55 },
-                    { date: '2026-01-06', value: 90 },
-                    { date: '2026-01-07', value: 40 },
-                    { date: '2026-01-08', value: 70 },
-                    { date: '2026-01-09', value: 35 },
-                    { date: '2026-01-10', value: 80 },
-                    { date: '2026-01-11', value: 60 },
-                    { date: '2026-01-12', value: 95 },
-                  ]}
-                  xKey="date"
-                  yKey="value"
-                  color="var(--terracotta)"
-                />
-              </React.Suspense>
             </div>
 
             <hr className="rule-h" style={{ margin: '32px 0' }} />
