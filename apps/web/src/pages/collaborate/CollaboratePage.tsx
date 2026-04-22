@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef, useCallback } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import { useParams } from 'react-router-dom'
 
 interface Collaborator {
@@ -6,16 +6,6 @@ interface Collaborator {
   username: string
   display_name: string
   role: string
-}
-
-interface DocOperation {
-  id: string
-  username: string
-  operation: string
-  position: number
-  content: string
-  version: number
-  timestamp: number
 }
 
 interface CollaborativeDoc {
@@ -36,11 +26,18 @@ export default function CollaboratePage() {
   const [saving, setSaving] = useState(false)
   const textareaRef = useRef<HTMLTextAreaElement>(null)
   const lastContentRef = useRef('')
-  const syncIntervalRef = useRef<ReturnType<typeof setInterval>>()
+  const syncIntervalRef = useRef<ReturnType<typeof setInterval> | null>(null)
+  const versionRef = useRef(0)
+
+  useEffect(() => {
+    versionRef.current = version
+  }, [version])
 
   useEffect(() => {
     loadDoc()
-    syncIntervalRef.current = setInterval(syncOperations, 3000)
+    syncIntervalRef.current = setInterval(() => {
+      if (docId) syncOperations(versionRef.current)
+    }, 3000)
     return () => {
       if (syncIntervalRef.current) clearInterval(syncIntervalRef.current)
     }
@@ -66,10 +63,10 @@ export default function CollaboratePage() {
     }
   }
 
-  const syncOperations = async () => {
+  const syncOperations = async (currentVersion: number) => {
     if (!docId) return
     try {
-      const res = await fetch(`/api/collaborate/docs/${docId}/operations?since=${version}`)
+      const res = await fetch(`/api/collaborate/docs/${docId}/operations?since=${currentVersion}`)
       if (!res.ok) return
       const data = await res.json()
       
@@ -81,7 +78,7 @@ export default function CollaboratePage() {
           } else if (op.operation === 'delete') {
             newContent = newContent.slice(0, op.position) + newContent.slice(op.position + (op.content?.length || 1))
           }
-          if (op.version > version) {
+          if (op.version > currentVersion) {
             setVersion(op.version)
           }
         }
