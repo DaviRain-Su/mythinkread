@@ -4,7 +4,11 @@ import { z } from 'zod'
 import { generateText, generateContinuation, generateRewrite, generateCoverDescription, moderateContent } from '../lib/ai'
 import type { Env } from '../index'
 
-const ai = new Hono<{ Bindings: Env }>()
+interface AiVariables {
+  user: { userId: string; username: string }
+}
+
+const ai = new Hono<{ Bindings: Env; Variables: AiVariables }>()
 
 /**
  * TTL for AI draft snapshots in KV.
@@ -188,7 +192,7 @@ ai.post('/cover', zValidator('json', coverSchema), async (c) => {
     // Generate image using Stable Diffusion
     const imageResponse = await c.env.AI.run('@cf/stabilityai/stable-diffusion-xl-base-1.0', {
       prompt: prompt
-    }) as { image: string }
+    }) as unknown as { image: string }
 
     // Convert base64 to binary and store in R2
     const imageBuffer = Uint8Array.from(atob(imageResponse.image), c => c.charCodeAt(0))

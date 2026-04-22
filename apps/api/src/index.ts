@@ -37,6 +37,7 @@ export interface Env {
   JWT_SECRET: string
   PINATA_JWT: string
   BUNDLR_PRIVATE_KEY: string
+  ENVIRONMENT: string
 }
 
 const app = new Hono<{ Bindings: Env }>()
