@@ -3,7 +3,7 @@ main = "src/index.ts"
 compatibility_date = "2025-04-21"
 
 [vars]
-ENVIRONMENT = "development"
+ENVIRONMENT = "production"
 
 [[d1_databases]]
 binding = "DB"
@@ -12,7 +12,7 @@ database_id = "b656c409-100e-4111-9038-43ff874df80f"
 
 [[kv_namespaces]]
 binding = "KV"
-id = "local"
+id = "e1361461cc9e4d7680bac5624cf1ef83"
 
 [[r2_buckets]]
 binding = "R2"

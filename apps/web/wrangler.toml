@@ -1,0 +1,9 @@
+name = "mythinkread-web"
+compatibility_date = "2025-04-21"
+pages_build_output_dir = "dist"
+
+[env.production.vars]
+VITE_API_BASE_URL = "https://mythinkread-api.davirain-yin.workers.dev"
+
+[env.preview.vars]
+VITE_API_BASE_URL = "https://mythinkread-api.davirain-yin.workers.dev"

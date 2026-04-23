@@ -59,7 +59,7 @@ declare module 'hono' {
 
 app.use(logger())
 app.use(cors({
-  origin: ['http://localhost:3000', 'https://mythinkread.pages.dev'],
+  origin: ['http://localhost:3000', 'https://mythinkread.pages.dev', 'https://mythinkread-web.pages.dev'],
   credentials: true
 }))
 
