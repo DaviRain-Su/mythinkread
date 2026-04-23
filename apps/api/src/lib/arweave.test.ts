@@ -5,15 +5,17 @@ import { uploadToArweave, getFromArweave, uploadJSONToArweave } from './arweave'
  * Verifies assertion A1.8-storage-prod-strict (Arweave portion):
  *  - In production, missing BUNDLR_PRIVATE_KEY throws.
  *  - In dev, missing BUNDLR_PRIVATE_KEY returns a __DEV_MOCK__ tx and logs warning.
- *  - Upload uses a Workers-compatible path (Irys REST bundler / direct arweave.net tx).
- *  - No invalid `timeout` field in fetch RequestInit.
+ *  - Upload uses the modern Irys SDK with Solana payment.
+ *  - Retries on transient errors (3x exponential backoff).
  */
 
 function makeEnv(overrides: Partial<import('../index').Env> = {}) {
+  // A valid-looking JSON keypair (64 bytes) so getIrysUploader can parse it.
+  const dummyKeypair = JSON.stringify(Array.from({ length: 64 }, (_, i) => i))
   return {
     ENVIRONMENT: 'development',
     PINATA_JWT: 'test-jwt',
-    BUNDLR_PRIVATE_KEY: 'test-private-key',
+    BUNDLR_PRIVATE_KEY: dummyKeypair,
     JWT_SECRET: 'test-secret',
     DB: {} as D1Database,
     KV: {} as KVNamespace,
@@ -24,8 +26,23 @@ function makeEnv(overrides: Partial<import('../index').Env> = {}) {
   } as import('../index').Env
 }
 
+// Mock the Irys SDK modules so we never hit the network.
+const mockUpload = vi.fn()
+const mockWithWallet = vi.fn().mockReturnValue({ withRpc: vi.fn().mockReturnValue({ upload: mockUpload }) })
+const mockUploader = vi.fn().mockReturnValue({ withWallet: mockWithWallet })
+const mockSolana = vi.fn().mockReturnValue({})
+
+vi.mock('@irys/upload', () => ({ Uploader: mockUploader }))
+vi.mock('@irys/upload-solana', () => ({ Solana: mockSolana }))
+
 describe('uploadToArweave', () => {
-  beforeEach(() => vi.restoreAllMocks())
+  beforeEach(() => {
+    vi.restoreAllMocks()
+    mockUpload.mockReset()
+    mockWithWallet.mockClear()
+    mockUploader.mockClear()
+    mockSolana.mockClear()
+  })
 
   it('throws in production when BUNDLR_PRIVATE_KEY is missing', async () => {
     const env = makeEnv({ ENVIRONMENT: 'production', BUNDLR_PRIVATE_KEY: '' })
@@ -41,69 +58,56 @@ describe('uploadToArweave', () => {
     warnSpy.mockRestore()
   })
 
-  it('uploads via Irys REST bundler with correct headers and tags', async () => {
-    const fetchSpy = vi.spyOn(globalThis, 'fetch').mockResolvedValueOnce({
-      ok: true,
-      json: async () => ({ id: 'real-tx-id-123' })
-    } as Response)
+  it('uploads via Irys SDK with Solana payment and tags', async () => {
+    mockUpload.mockResolvedValueOnce({ id: 'real-tx-id-123' })
 
     const env = makeEnv()
     const tx = await uploadToArweave(env, 'chapter body', { 'App-Name': 'MyThinkRead', 'Content-Type': 'text/markdown' })
 
     expect(tx).toBe('real-tx-id-123')
-    expect(fetchSpy).toHaveBeenCalledTimes(1)
-    const [url, init] = fetchSpy.mock.calls[0]
-    expect(url).toBe('https://node1.bundlr.network/tx/matic')
-    expect(init?.method).toBe('POST')
+    expect(mockUploader).toHaveBeenCalledTimes(1)
+    expect(mockWithWallet).toHaveBeenCalledTimes(1)
+    expect(mockUpload).toHaveBeenCalledTimes(1)
 
-    const headers = init?.headers as Record<string, string>
-    expect(headers['Content-Type']).toBe('application/octet-stream')
-    expect(headers['x-irys-public-key']).toBe('test-private-key')
+    const uploadCall = mockUpload.mock.calls[0]
+    const uploadedData = uploadCall[0] as Uint8Array
+    expect(new TextDecoder().decode(uploadedData)).toBe('chapter body')
 
-    // Ensure no invalid `timeout` field is present in RequestInit
-    expect(init).not.toHaveProperty('timeout')
-
-    fetchSpy.mockRestore()
+    const uploadOpts = uploadCall[1] as { tags?: Array<{ name: string; value: string }> }
+    expect(uploadOpts.tags).toEqual([
+      { name: 'App-Name', value: 'MyThinkRead' },
+      { name: 'Content-Type', value: 'text/markdown' }
+    ])
   })
 
   it('retries up to 3 times on transient failure then throws', async () => {
-    const fetchSpy = vi.spyOn(globalThis, 'fetch')
+    mockUpload
       .mockRejectedValueOnce(new Error('network 1'))
       .mockRejectedValueOnce(new Error('network 2'))
       .mockRejectedValueOnce(new Error('network 3'))
 
     const env = makeEnv()
     await expect(uploadToArweave(env, 'body')).rejects.toThrow(/Arweave upload failed after 3 attempts/)
-    expect(fetchSpy).toHaveBeenCalledTimes(3)
-    fetchSpy.mockRestore()
+    expect(mockUpload).toHaveBeenCalledTimes(3)
   })
 
   it('succeeds on retry after transient failures', async () => {
-    const fetchSpy = vi.spyOn(globalThis, 'fetch')
+    mockUpload
       .mockRejectedValueOnce(new Error('network'))
-      .mockResolvedValueOnce({
-        ok: true,
-        json: async () => ({ id: 'retry-ok-tx' })
-      } as Response)
+      .mockResolvedValueOnce({ id: 'retry-ok-tx' })
 
     const env = makeEnv()
     const tx = await uploadToArweave(env, 'body')
     expect(tx).toBe('retry-ok-tx')
-    expect(fetchSpy).toHaveBeenCalledTimes(2)
-    fetchSpy.mockRestore()
+    expect(mockUpload).toHaveBeenCalledTimes(2)
   })
 
-  it('throws immediately on non-2xx response after exhausting retries', async () => {
-    const fetchSpy = vi.spyOn(globalThis, 'fetch').mockResolvedValue({
-      ok: false,
-      status: 502,
-      text: async () => 'Bad Gateway'
-    } as Response)
+  it('throws immediately on SDK error after exhausting retries', async () => {
+    mockUpload.mockRejectedValue(new Error('SDK exploded'))
 
     const env = makeEnv()
     await expect(uploadToArweave(env, 'body')).rejects.toThrow(/Arweave upload failed after 3 attempts/)
-    expect(fetchSpy).toHaveBeenCalledTimes(3)
-    fetchSpy.mockRestore()
+    expect(mockUpload).toHaveBeenCalledTimes(3)
   })
 })
 
@@ -136,21 +140,24 @@ describe('getFromArweave', () => {
 })
 
 describe('uploadJSONToArweave', () => {
-  beforeEach(() => vi.restoreAllMocks())
+  beforeEach(() => {
+    vi.restoreAllMocks()
+    mockUpload.mockReset()
+    mockWithWallet.mockClear()
+    mockUploader.mockClear()
+    mockSolana.mockClear()
+  })
 
   it('stringifies data and delegates to uploadToArweave', async () => {
-    const fetchSpy = vi.spyOn(globalThis, 'fetch').mockResolvedValueOnce({
-      ok: true,
-      json: async () => ({ id: 'json-tx' })
-    } as Response)
+    mockUpload.mockResolvedValueOnce({ id: 'json-tx' })
 
     const env = makeEnv()
     const tx = await uploadJSONToArweave(env, { hello: 'world' })
     expect(tx).toBe('json-tx')
 
-    const [, init] = fetchSpy.mock.calls[0]
-    const body = init?.body as ArrayBufferView
-    expect(new TextDecoder().decode(body as unknown as ArrayBufferView)).toBe(JSON.stringify({ hello: 'world' }, null, 2))
-    fetchSpy.mockRestore()
+    expect(mockUpload).toHaveBeenCalledTimes(1)
+    const uploadCall = mockUpload.mock.calls[0]
+    const uploadedData = uploadCall[0] as Uint8Array
+    expect(new TextDecoder().decode(uploadedData)).toBe(JSON.stringify({ hello: 'world' }, null, 2))
   })
 })

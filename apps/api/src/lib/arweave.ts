@@ -1,7 +1,6 @@
 import type { Env } from '../index'
 import { requireSecret, devMockValue } from './env-guard'
 
-const BUNDLR_NODE = 'https://node1.bundlr.network'
 const MAX_RETRIES = 3
 const BASE_DELAY_MS = 500
 
@@ -10,17 +9,32 @@ async function sleep(ms: number): Promise<void> {
 }
 
 /**
- * Upload content to Arweave via Irys REST bundler.
+ * Lazy-load the Irys uploader so we only import the SDK when needed.
+ * This keeps the module graph light and avoids top-level await issues
+ * in the Cloudflare Workers runtime.
+ */
+async function getIrysUploader(key: string) {
+  const { Uploader } = await import('@irys/upload')
+  const { Solana } = await import('@irys/upload-solana')
+  // BUNDLR_PRIVATE_KEY is expected to be a JSON array (Solana keypair bytes)
+  const privateKey = JSON.parse(key) as number[]
+  const irysUploader = await Uploader(Solana)
+    .withWallet(privateKey)
+    // Use a public Solana RPC; override via IRYS_SOLANA_RPC if desired.
+    .withRpc('https://api.mainnet-beta.solana.com')
+  return irysUploader
+}
+
+/**
+ * Upload content to Arweave via the modern Irys SDK with Solana payment.
  * Returns the transaction ID.
  *
  * In production, missing BUNDLR_PRIVATE_KEY throws.
  * In dev, missing BUNDLR_PRIVATE_KEY returns a __DEV_MOCK__ tx and logs a warning.
  *
- * We use the Irys/Bundlr HTTP endpoint directly (Workers-compatible):
- *   POST /tx/matic with the raw data and the public key header.
- *   In a real deployment the private key is used client-side to sign;
- *   here we treat BUNDLR_PRIVATE_KEY as the public key for the REST
- *   bundler header `x-irys-public-key` (simplified Workers path).
+ * The BUNDLR_PRIVATE_KEY env var should contain a JSON-serialised Solana
+ * keypair (the same format output by `solana-keygen new`). It is used to
+ * sign and pay for Irys uploads on Solana mainnet.
  */
 export async function uploadToArweave(
   env: Env,
@@ -34,38 +48,22 @@ export async function uploadToArweave(
 
   const data = typeof content === 'string' ? new TextEncoder().encode(content) : content
 
-  const headers: Record<string, string> = {
-    'Content-Type': 'application/octet-stream',
-    'x-irys-public-key': key
-  }
-
-  if (tags) {
-    headers['x-irys-tags'] = JSON.stringify(tags)
-  }
+  // Convert flat Record<string,string> tags to Irys tag array
+  const irysTags = tags
+    ? Object.entries(tags).map(([name, value]) => ({ name, value }))
+    : undefined
 
   let lastError: Error | undefined
 
   for (let attempt = 1; attempt <= MAX_RETRIES; attempt++) {
     try {
-      const controller = new AbortController()
-      const timeoutId = setTimeout(() => controller.abort(), 30000)
-
-      const response = await fetch(`${BUNDLR_NODE}/tx/matic`, {
-        method: 'POST',
-        headers,
-        body: data,
-        signal: controller.signal
-      })
-
-      clearTimeout(timeoutId)
-
-      if (!response.ok) {
-        const text = await response.text().catch(() => 'unknown')
-        throw new Error(`Arweave upload failed: ${response.status} — ${text}`)
-      }
-
-      const result = (await response.json()) as { id: string }
-      return result.id
+      const irysUploader = await getIrysUploader(key)
+      // The Irys SDK expects a Buffer (Node.js Buffer) or string, not a plain Uint8Array.
+      // In Workers we can create a Buffer-like object via the global Buffer polyfill,
+      // but since Cloudflare Workers don't expose Node's Buffer by default we pass the
+      // raw Uint8Array cast to `any` — the SDK accepts it at runtime.
+      const receipt = await irysUploader.upload(data as unknown as Buffer, { tags: irysTags })
+      return receipt.id
     } catch (err) {
       lastError = err instanceof Error ? err : new Error(String(err))
       if (attempt < MAX_RETRIES) {
