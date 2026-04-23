@@ -1,10 +1,22 @@
+import { cloudflareTest } from '@cloudflare/vitest-pool-workers'
 import { defineConfig } from 'vitest/config'
 
 export default defineConfig({
+  plugins: [
+    cloudflareTest({
+      wrangler: { configPath: './wrangler.toml' },
+      miniflare: {
+        compatibilityDate: '2025-04-21',
+        d1Databases: ['DB'],
+        kvNamespaces: ['KV'],
+        r2Buckets: ['R2'],
+        queueProducers: { QUEUE: 'book-processing' }
+      }
+    })
+  ],
   test: {
     include: ['src/**/*.test.ts'],
-    environment: 'node',
-    globals: false,
-    testTimeout: 10000
+    globals: true,
+    testTimeout: 15000
   }
 })
