@@ -1,6 +1,7 @@
 name = "mythinkread-api"
 main = "src/index.ts"
 compatibility_date = "2025-04-21"
+compatibility_flags = ["nodejs_compat"]
 
 [vars]
 ENVIRONMENT = "production"
