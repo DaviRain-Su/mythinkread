@@ -31,55 +31,52 @@ export default function ProfilePage() {
   const wallet = useWallet()
 
   useEffect(() => {
+    const loadMyBooks = async () => {
+      try {
+        const token = localStorage.getItem('mtr_token')
+        const res = await fetch('/api/books?page=1&limit=50', {
+          headers: { Authorization: `Bearer ${token}` }
+        })
+        if (!res.ok) return
+        const data = await res.json()
+        // Filter books by current user (this is simplified, ideally backend filters)
+        setMyBooks(data.items || [])
+      } catch (err) {
+        console.error(err)
+      }
+    }
+    const loadProgress = async () => {
+      try {
+        const token = localStorage.getItem('mtr_token')
+        const res = await fetch('/api/export/reading', {
+          headers: { Authorization: `Bearer ${token}` }
+        })
+        if (!res.ok) return
+        const data = await res.json()
+        setProgress(data.reading_progress || [])
+      } catch (err) {
+        console.error(err)
+      }
+    }
+    const loadWallet = async () => {
+      try {
+        const token = localStorage.getItem('mtr_token')
+        const res = await fetch('/api/solana/wallet', {
+          headers: { Authorization: `Bearer ${token}` }
+        })
+        if (!res.ok) return
+        const data = await res.json()
+        setWalletAddress(data.wallet_address)
+      } catch (err) {
+        console.error(err)
+      }
+    }
     if (user) {
       loadMyBooks()
       loadProgress()
       loadWallet()
     }
   }, [user])
-
-  const loadMyBooks = async () => {
-    try {
-      const token = localStorage.getItem('mtr_token')
-      const res = await fetch('/api/books?page=1&limit=50', {
-        headers: { Authorization: `Bearer ${token}` }
-      })
-      if (!res.ok) return
-      const data = await res.json()
-      // Filter books by current user (this is simplified, ideally backend filters)
-      setMyBooks(data.items || [])
-    } catch (err) {
-      console.error(err)
-    }
-  }
-
-  const loadProgress = async () => {
-    try {
-      const token = localStorage.getItem('mtr_token')
-      const res = await fetch('/api/export/reading', {
-        headers: { Authorization: `Bearer ${token}` }
-      })
-      if (!res.ok) return
-      const data = await res.json()
-      setProgress(data.reading_progress || [])
-    } catch (err) {
-      console.error(err)
-    }
-  }
-
-  const loadWallet = async () => {
-    try {
-      const token = localStorage.getItem('mtr_token')
-      const res = await fetch('/api/solana/wallet', {
-        headers: { Authorization: `Bearer ${token}` }
-      })
-      if (!res.ok) return
-      const data = await res.json()
-      setWalletAddress(data.wallet_address)
-    } catch (err) {
-      console.error(err)
-    }
-  }
 
   const handleLinkWallet = async () => {
     if (!wallet.connected || !wallet.publicKey) {

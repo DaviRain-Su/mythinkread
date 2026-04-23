@@ -236,7 +236,7 @@ export default function WikiEntityPage() {
                   flex: 1,
                   height: 22,
                   background: v ? 'var(--terracotta)' : 'var(--paper-3)',
-                  opacity: v ? 0.4 + Math.random() * 0.6 : 1,
+                  opacity: v ? 0.4 + ((i * 37) % 60) / 100 : 1,
                 }}
               />
             ))}

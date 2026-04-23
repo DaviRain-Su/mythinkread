@@ -17,6 +17,13 @@ export default defineConfig({
   test: {
     include: ['src/**/*.test.ts'],
     globals: true,
-    testTimeout: 15000
+    testTimeout: 15000,
+    poolOptions: {
+      workers: {
+        singleWorker: true,
+        minWorkers: 1,
+        maxWorkers: 1,
+      },
+    },
   }
 })

@@ -1,9 +1,9 @@
 import { Hono } from 'hono'
 import { zValidator } from '@hono/zod-validator'
 import { z } from 'zod'
-import type { Env } from '../index'
+import type { Env, AuthedUser } from '../index'
 
-const books = new Hono<{ Bindings: Env }>()
+const books = new Hono<{ Bindings: Env; Variables: { user: AuthedUser; jwtPayload: AuthedUser } }>()
 
 // Auth middleware
 books.use('*', async (c, next) => {
@@ -16,8 +16,7 @@ books.use('*', async (c, next) => {
   try {
     const { verifyToken } = await import('../lib/jwt')
     const payload = await verifyToken(token, c.env)
-    // @ts-ignore - set user on context
-    c.set('user', payload)
+    c.set('user', payload as AuthedUser)
     await next()
   } catch {
     return c.json({ error: 'INVALID_TOKEN' }, 401)
@@ -43,8 +42,7 @@ const createBookSchema = z.object({
 
 // POST /api/books - Create a new book draft
 books.post('/', zValidator('json', createBookSchema), async (c) => {
-  // @ts-ignore - user is set by auth middleware
-  const user = c.get('user') as { userId: string; username: string; role: string }
+  const user = c.get('user')
   const { title, description, tags, ai_mode } = c.req.valid('json')
   const db = c.env.DB
   const now = Math.floor(Date.now() / 1000)
@@ -160,8 +158,7 @@ const chapterSchema = z.object({
 })
 
 books.post('/:id/chapters', zValidator('json', chapterSchema), async (c) => {
-  // @ts-ignore - user is set by auth middleware
-  const user = c.get('user') as { userId: string }
+  const user = c.get('user')
   const db = c.env.DB
   const bookId = c.req.param('id')
   const { title, content, idx, ai_draft_id } = c.req.valid('json')
@@ -238,8 +235,7 @@ const AI_EDIT_RATIO_THRESHOLD = 0.20
 
 // POST /api/books/:id/publish - Publish book (triggers async processing)
 books.post('/:id/publish', async (c) => {
-  // @ts-ignore - user is set by auth middleware
-  const user = c.get('user') as { userId: string }
+  const user = c.get('user')
   const db = c.env.DB
   const bookId = c.req.param('id')
 
@@ -441,8 +437,7 @@ books.get('/:id/read/:chapterId', async (c) => {
 
 // POST /api/books/:id/progress - Update reading progress
 books.post('/:id/progress', async (c) => {
-  // @ts-ignore - user is set by auth middleware
-  const user = c.get('user') as { userId: string }
+  const user = c.get('user')
   const db = c.env.DB
   const bookId = c.req.param('id')
 

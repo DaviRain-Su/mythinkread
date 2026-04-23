@@ -81,28 +81,71 @@ export default function BookDetailPage() {
   const [tab, setTab] = useState<TabKey>('about')
 
   useEffect(() => {
+    const loadBook = async () => {
+      if (!bookId) return
+      try {
+        const token = localStorage.getItem('mtr_token')
+        const res = await fetch(`/api/books/${bookId}`, {
+          headers: { Authorization: `Bearer ${token}` },
+        })
+        if (!res.ok) throw new Error('Failed to load book')
+        const data = (await res.json()) as Book
+        setBook(data)
+      } catch (err) {
+        console.error(err)
+      } finally {
+        setLoading(false)
+      }
+    }
+    const loadComments = async () => {
+      if (!bookId) return
+      try {
+        const token = localStorage.getItem('mtr_token')
+        const res = await fetch(`/api/comments?book_id=${bookId}`, {
+          headers: { Authorization: `Bearer ${token}` },
+        })
+        if (!res.ok) throw new Error('Failed to load comments')
+        const data = await res.json()
+        setComments(data.items || [])
+      } catch (err) {
+        console.error(err)
+      }
+    }
+    const loadRatings = async () => {
+      if (!bookId) return
+      try {
+        const token = localStorage.getItem('mtr_token')
+        const res = await fetch(`/api/books/${bookId}/ratings`, {
+          headers: { Authorization: `Bearer ${token}` },
+        })
+        if (!res.ok) throw new Error('Failed to load ratings')
+        const data = await res.json()
+        setRatings(data.items || [])
+        setRatingStats(data.stats || null)
+      } catch (err) {
+        console.error(err)
+      }
+    }
+    const loadMyRating = async () => {
+      if (!bookId) return
+      try {
+        const token = localStorage.getItem('mtr_token')
+        const res = await fetch(`/api/books/${bookId}/my-rating`, {
+          headers: { Authorization: `Bearer ${token}` },
+        })
+        if (!res.ok) return
+        const data = await res.json()
+        setMyRating(data.score || 0)
+        setMyReview(data.review || '')
+      } catch (err) {
+        console.error(err)
+      }
+    }
     void loadBook()
     void loadComments()
     void loadRatings()
     void loadMyRating()
   }, [bookId])
-
-  const loadBook = async () => {
-    if (!bookId) return
-    try {
-      const token = localStorage.getItem('mtr_token')
-      const res = await fetch(`/api/books/${bookId}`, {
-        headers: { Authorization: `Bearer ${token}` },
-      })
-      if (!res.ok) throw new Error('Failed to load book')
-      const data = (await res.json()) as Book
-      setBook(data)
-    } catch (err) {
-      console.error(err)
-    } finally {
-      setLoading(false)
-    }
-  }
 
   const loadComments = async () => {
     if (!bookId) return

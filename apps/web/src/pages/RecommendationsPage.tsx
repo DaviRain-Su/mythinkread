@@ -18,34 +18,33 @@ export default function RecommendationsPage() {
   const [loading, setLoading] = useState(true)
 
   useEffect(() => {
+    const loadRecommendations = async () => {
+      try {
+        const token = localStorage.getItem('mtr_token')
+
+        // Load personalized recommendations
+        const forYouRes = await fetch('/api/recommendations/for-you?limit=10', {
+          headers: token ? { Authorization: `Bearer ${token}` } : {}
+        })
+        if (forYouRes.ok) {
+          const data = await forYouRes.json()
+          setForYou(data.items || [])
+        }
+
+        // Load trending
+        const trendingRes = await fetch('/api/recommendations/trending?limit=10')
+        if (trendingRes.ok) {
+          const data = await trendingRes.json()
+          setTrending(data.items || [])
+        }
+      } catch (err) {
+        console.error(err)
+      } finally {
+        setLoading(false)
+      }
+    }
     loadRecommendations()
   }, [])
-
-  const loadRecommendations = async () => {
-    try {
-      const token = localStorage.getItem('mtr_token')
-      
-      // Load personalized recommendations
-      const forYouRes = await fetch('/api/recommendations/for-you?limit=10', {
-        headers: token ? { Authorization: `Bearer ${token}` } : {}
-      })
-      if (forYouRes.ok) {
-        const data = await forYouRes.json()
-        setForYou(data.items || [])
-      }
-
-      // Load trending
-      const trendingRes = await fetch('/api/recommendations/trending?limit=10')
-      if (trendingRes.ok) {
-        const data = await trendingRes.json()
-        setTrending(data.items || [])
-      }
-    } catch (err) {
-      console.error(err)
-    } finally {
-      setLoading(false)
-    }
-  }
 
   const BookCard = ({ book }: { book: Book }) => (
     <div

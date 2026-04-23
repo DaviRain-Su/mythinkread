@@ -18,22 +18,21 @@ export default function RankingsPage() {
   const [loading, setLoading] = useState(true)
 
   useEffect(() => {
+    const loadRankings = async () => {
+      setLoading(true)
+      try {
+        const res = await fetch(`/api/rankings/${activeTab}?period=weekly&limit=20`)
+        if (!res.ok) throw new Error('Failed to load rankings')
+        const data = await res.json()
+        setBooks(data.items || [])
+      } catch (err) {
+        console.error(err)
+      } finally {
+        setLoading(false)
+      }
+    }
     loadRankings()
   }, [activeTab])
-
-  const loadRankings = async () => {
-    setLoading(true)
-    try {
-      const res = await fetch(`/api/rankings/${activeTab}?period=weekly&limit=20`)
-      if (!res.ok) throw new Error('Failed to load rankings')
-      const data = await res.json()
-      setBooks(data.items || [])
-    } catch (err) {
-      console.error(err)
-    } finally {
-      setLoading(false)
-    }
-  }
 
   const tabs = [
     { key: 'hot' as const, label: '热读榜' },

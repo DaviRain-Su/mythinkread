@@ -34,24 +34,23 @@ export default function AnalyticsPage() {
   const [days, setDays] = useState(30)
 
   useEffect(() => {
+    const loadAnalytics = async () => {
+      try {
+        const token = localStorage.getItem('mtr_token')
+        const res = await fetch(`/api/analytics/overview?days=${days}`, {
+          headers: { Authorization: `Bearer ${token}` }
+        })
+        if (!res.ok) throw new Error('Failed to load analytics')
+        const data = await res.json()
+        setStats(data)
+      } catch (err) {
+        console.error(err)
+      } finally {
+        setLoading(false)
+      }
+    }
     loadAnalytics()
   }, [days])
-
-  const loadAnalytics = async () => {
-    try {
-      const token = localStorage.getItem('mtr_token')
-      const res = await fetch(`/api/analytics/overview?days=${days}`, {
-        headers: { Authorization: `Bearer ${token}` }
-      })
-      if (!res.ok) throw new Error('Failed to load analytics')
-      const data = await res.json()
-      setStats(data)
-    } catch (err) {
-      console.error(err)
-    } finally {
-      setLoading(false)
-    }
-  }
 
   if (loading) {
     return <div style={{ textAlign: 'center', padding: '3rem' }}>Loading...</div>

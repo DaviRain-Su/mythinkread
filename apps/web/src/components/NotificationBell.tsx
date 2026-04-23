@@ -15,6 +15,21 @@ export default function NotificationBell() {
   const [showPanel, setShowPanel] = useState(false)
 
   useEffect(() => {
+    const loadNotifications = async () => {
+      try {
+        const token = localStorage.getItem('mtr_token')
+        if (!token) return
+        const res = await fetch('/api/notifications?limit=10', {
+          headers: { Authorization: `Bearer ${token}` }
+        })
+        if (!res.ok) return
+        const data = await res.json()
+        setNotifications(data.items || [])
+        setUnreadCount(data.unread_count || 0)
+      } catch (err) {
+        console.error(err)
+      }
+    }
     loadNotifications()
     const interval = setInterval(loadNotifications, 30000)
     return () => clearInterval(interval)

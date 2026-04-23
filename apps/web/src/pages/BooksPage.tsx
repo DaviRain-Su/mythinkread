@@ -21,24 +21,23 @@ export default function BooksPage() {
   const [search, setSearch] = useState('')
 
   useEffect(() => {
+    const loadBooks = async () => {
+      try {
+        const token = localStorage.getItem('mtr_token')
+        const res = await fetch('/api/books?page=1&limit=50', {
+          headers: token ? { Authorization: `Bearer ${token}` } : {}
+        })
+        if (!res.ok) throw new Error('Failed to load books')
+        const data = await res.json()
+        setBooks(data.items || [])
+      } catch (err) {
+        console.error(err)
+      } finally {
+        setLoading(false)
+      }
+    }
     loadBooks()
   }, [])
-
-  const loadBooks = async () => {
-    try {
-      const token = localStorage.getItem('mtr_token')
-      const res = await fetch('/api/books?page=1&limit=50', {
-        headers: token ? { Authorization: `Bearer ${token}` } : {}
-      })
-      if (!res.ok) throw new Error('Failed to load books')
-      const data = await res.json()
-      setBooks(data.items || [])
-    } catch (err) {
-      console.error(err)
-    } finally {
-      setLoading(false)
-    }
-  }
 
   const filteredBooks = books.filter(book =>
     book.title.toLowerCase().includes(search.toLowerCase()) ||

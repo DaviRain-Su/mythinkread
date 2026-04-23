@@ -3,7 +3,6 @@
   "private": true,
   "version": "0.1.0",
   "type": "module",
-
   "scripts": {
     "dev:web": "pnpm --filter @mtr/web dev",
     "dev:api": "pnpm --filter @mtr/api dev",
@@ -13,8 +12,13 @@
     "test": "pnpm -r test -- --run"
   },
   "devDependencies": {
+    "@eslint/js": "^10.0.1",
     "@types/node": "^22.0.0",
-    "typescript": "^5.8.0"
+    "eslint": "^10.2.1",
+    "eslint-plugin-react-hooks": "^7.1.1",
+    "prettier": "^3.8.3",
+    "typescript": "^5.8.0",
+    "typescript-eslint": "^8.59.0"
   },
   "packageManager": "pnpm@9.1.4"
 }

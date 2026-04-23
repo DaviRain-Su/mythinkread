@@ -34,32 +34,31 @@ export default function AdminDashboardPage() {
   const [loading, setLoading] = useState(true)
 
   useEffect(() => {
-    loadDashboard()
-  }, [])
-
-  const loadDashboard = async () => {
-    try {
-      const token = localStorage.getItem('mtr_token')
-      const res = await fetch('/api/admin/dashboard', {
-        headers: { Authorization: `Bearer ${token}` }
-      })
-      if (!res.ok) {
-        if (res.status === 403) {
-          navigate('/')
-          return
+    const loadDashboard = async () => {
+      try {
+        const token = localStorage.getItem('mtr_token')
+        const res = await fetch('/api/admin/dashboard', {
+          headers: { Authorization: `Bearer ${token}` }
+        })
+        if (!res.ok) {
+          if (res.status === 403) {
+            navigate('/')
+            return
+          }
+          throw new Error('Failed to load dashboard')
         }
-        throw new Error('Failed to load dashboard')
+        const data = await res.json()
+        setStats(data.stats)
+        setRecentUsers(data.recent_users || [])
+        setRecentBooks(data.recent_books || [])
+      } catch (err) {
+        console.error(err)
+      } finally {
+        setLoading(false)
       }
-      const data = await res.json()
-      setStats(data.stats)
-      setRecentUsers(data.recent_users || [])
-      setRecentBooks(data.recent_books || [])
-    } catch (err) {
-      console.error(err)
-    } finally {
-      setLoading(false)
     }
-  }
+    loadDashboard()
+  }, [navigate])
 
   if (loading) {
     return <div style={{ textAlign: 'center', padding: '3rem' }}>Loading...</div>

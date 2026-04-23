@@ -17,24 +17,23 @@ export default function BlogSettingsPage() {
   const [saving, setSaving] = useState(false)
 
   useEffect(() => {
+    const loadConfig = async () => {
+      try {
+        const token = localStorage.getItem('mtr_token')
+        const res = await fetch('/api/blog/config', {
+          headers: { Authorization: `Bearer ${token}` }
+        })
+        if (!res.ok) throw new Error('Failed to load config')
+        const data = await res.json()
+        setConfig(data.config)
+      } catch (err) {
+        console.error(err)
+      } finally {
+        setLoading(false)
+      }
+    }
     loadConfig()
   }, [])
-
-  const loadConfig = async () => {
-    try {
-      const token = localStorage.getItem('mtr_token')
-      const res = await fetch('/api/blog/config', {
-        headers: { Authorization: `Bearer ${token}` }
-      })
-      if (!res.ok) throw new Error('Failed to load config')
-      const data = await res.json()
-      setConfig(data.config)
-    } catch (err) {
-      console.error(err)
-    } finally {
-      setLoading(false)
-    }
-  }
 
   const handleSave = async () => {
     if (!config) return

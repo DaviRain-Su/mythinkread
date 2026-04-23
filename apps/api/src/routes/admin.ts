@@ -1,7 +1,7 @@
 import { Hono } from 'hono'
-import type { Env } from '../index'
+import type { Env, AuthedUser } from '../index'
 
-const admin = new Hono<{ Bindings: Env }>()
+const admin = new Hono<{ Bindings: Env; Variables: { user: AuthedUser; jwtPayload: AuthedUser } }>()
 
 // Admin auth middleware
 admin.use('*', async (c, next) => {
@@ -20,12 +20,11 @@ admin.use('*', async (c, next) => {
     const user = await db.prepare('SELECT role FROM users WHERE id = ?')
       .bind(payload.userId).first()
     
-    if (!user || (user as any).role !== 'admin') {
+    if (!user || (user as { role?: string }).role !== 'admin') {
       return c.json({ error: 'FORBIDDEN' }, 403)
     }
     
-    // @ts-ignore
-    c.set('user', payload)
+    c.set('user', payload as AuthedUser)
     await next()
   } catch {
     return c.json({ error: 'INVALID_TOKEN' }, 401)
@@ -73,12 +72,12 @@ admin.get('/dashboard', async (c) => {
 
   return c.json({
     stats: {
-      total_users: (userCount as any)?.count || 0,
-      total_books: (bookCount as any)?.count || 0,
-      total_chapters: (chapterCount as any)?.count || 0,
-      total_comments: (commentCount as any)?.count || 0,
-      total_reading_sessions: (readingCount as any)?.count || 0,
-      total_purchases: (purchaseCount as any)?.count || 0
+      total_users: (userCount as { count?: number })?.count || 0,
+      total_books: (bookCount as { count?: number })?.count || 0,
+      total_chapters: (chapterCount as { count?: number })?.count || 0,
+      total_comments: (commentCount as { count?: number })?.count || 0,
+      total_reading_sessions: (readingCount as { count?: number })?.count || 0,
+      total_purchases: (purchaseCount as { count?: number })?.count || 0
     },
     recent_users: recentUsers.results || [],
     recent_books: recentBooks.results || [],
@@ -110,7 +109,7 @@ admin.get('/users', async (c) => {
 
   return c.json({
     items: results.results || [],
-    total: (total as any)?.count || 0,
+    total: (total as { count?: number })?.count || 0,
     page,
     limit
   })
@@ -161,7 +160,7 @@ admin.get('/books', async (c) => {
 
   return c.json({
     items: results.results || [],
-    total: (total as any)?.count || 0,
+    total: (total as { count?: number })?.count || 0,
     page,
     limit
   })

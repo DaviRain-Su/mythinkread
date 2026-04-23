@@ -34,6 +34,50 @@ export default function CollaboratePage() {
   }, [version])
 
   useEffect(() => {
+    const loadDoc = async () => {
+      if (!docId) return
+      try {
+        const token = localStorage.getItem('mtr_token')
+        const res = await fetch(`/api/collaborate/docs/${docId}`, {
+          headers: token ? { Authorization: `Bearer ${token}` } : {}
+        })
+        if (!res.ok) throw new Error('Failed to load doc')
+        const data = await res.json()
+        setDoc(data)
+        setContent(data.content || '')
+        lastContentRef.current = data.content || ''
+        setVersion(data.version || 1)
+      } catch (err) {
+        console.error(err)
+      } finally {
+        setLoading(false)
+      }
+    }
+    const syncOperations = async (currentVersion: number) => {
+      if (!docId) return
+      try {
+        const res = await fetch(`/api/collaborate/docs/${docId}/operations?since=${currentVersion}`)
+        if (!res.ok) return
+        const data = await res.json()
+        if (data.operations?.length > 0) {
+          let newContent = content
+          for (const op of data.operations) {
+            if (op.operation === 'insert') {
+              newContent = newContent.slice(0, op.position) + op.content + newContent.slice(op.position)
+            } else if (op.operation === 'delete') {
+              newContent = newContent.slice(0, op.position) + newContent.slice(op.position + (op.content?.length || 1))
+            }
+            if (op.version > currentVersion) {
+              setVersion(op.version)
+            }
+          }
+          setContent(newContent)
+          lastContentRef.current = newContent
+        }
+      } catch (err) {
+        console.error(err)
+      }
+    }
     loadDoc()
     syncIntervalRef.current = setInterval(() => {
       if (docId) syncOperations(versionRef.current)
@@ -42,53 +86,6 @@ export default function CollaboratePage() {
       if (syncIntervalRef.current) clearInterval(syncIntervalRef.current)
     }
   }, [docId])
-
-  const loadDoc = async () => {
-    if (!docId) return
-    try {
-      const token = localStorage.getItem('mtr_token')
-      const res = await fetch(`/api/collaborate/docs/${docId}`, {
-        headers: token ? { Authorization: `Bearer ${token}` } : {}
-      })
-      if (!res.ok) throw new Error('Failed to load doc')
-      const data = await res.json()
-      setDoc(data)
-      setContent(data.content || '')
-      lastContentRef.current = data.content || ''
-      setVersion(data.version || 1)
-    } catch (err) {
-      console.error(err)
-    } finally {
-      setLoading(false)
-    }
-  }
-
-  const syncOperations = async (currentVersion: number) => {
-    if (!docId) return
-    try {
-      const res = await fetch(`/api/collaborate/docs/${docId}/operations?since=${currentVersion}`)
-      if (!res.ok) return
-      const data = await res.json()
-      
-      if (data.operations?.length > 0) {
-        let newContent = content
-        for (const op of data.operations) {
-          if (op.operation === 'insert') {
-            newContent = newContent.slice(0, op.position) + op.content + newContent.slice(op.position)
-          } else if (op.operation === 'delete') {
-            newContent = newContent.slice(0, op.position) + newContent.slice(op.position + (op.content?.length || 1))
-          }
-          if (op.version > currentVersion) {
-            setVersion(op.version)
-          }
-        }
-        setContent(newContent)
-        lastContentRef.current = newContent
-      }
-    } catch (err) {
-      console.error(err)
-    }
-  }
 
   const handleContentChange = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
     const newContent = e.target.value

@@ -79,12 +79,37 @@ export default function BookReaderPage() {
   const { t } = useTranslation()
   const [showExitDialog, setShowExitDialog] = useState(false)
 
-  useEffect(() => {
-    void loadBook()
-    // eslint-disable-next-line react-hooks/exhaustive-deps
+  const loadAnnotations = useCallback(async (chapterId: string) => {
+    if (!bookId) return
+    try {
+      const res = await fetch(`/api/annotations?book_id=${bookId}&chapter_id=${chapterId}`)
+      if (!res.ok) return
+      const data = await res.json()
+      setAnnotations(data.items || [])
+    } catch (err) {
+      console.error(err)
+    }
   }, [bookId])
 
-  const loadBook = async () => {
+  const loadChapter = useCallback(async (chapter: Chapter) => {
+    if (!bookId) return
+    setCurrentChapter(chapter)
+    setChapterContent('')
+    try {
+      const token = localStorage.getItem('mtr_token')
+      const res = await fetch(`/api/books/${bookId}/read/${chapter.id}`, {
+        headers: { Authorization: `Bearer ${token}` },
+      })
+      if (!res.ok) throw new Error('Failed to load chapter')
+      const data = await res.json()
+      setChapterContent(data.chapter?.content || '')
+      void loadAnnotations(chapter.id)
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Failed to load chapter')
+    }
+  }, [bookId, loadAnnotations])
+
+  const loadBook = useCallback(async () => {
     if (!bookId) return
     try {
       const token = localStorage.getItem('mtr_token')
@@ -102,37 +127,13 @@ export default function BookReaderPage() {
     } finally {
       setLoading(false)
     }
-  }
+  }, [bookId, loadChapter])
 
-  const loadChapter = async (chapter: Chapter) => {
-    if (!bookId) return
-    setCurrentChapter(chapter)
-    setChapterContent('')
-    try {
-      const token = localStorage.getItem('mtr_token')
-      const res = await fetch(`/api/books/${bookId}/read/${chapter.id}`, {
-        headers: { Authorization: `Bearer ${token}` },
-      })
-      if (!res.ok) throw new Error('Failed to load chapter')
-      const data = await res.json()
-      setChapterContent(data.chapter?.content || '')
-      void loadAnnotations(chapter.id)
-    } catch (err) {
-      setError(err instanceof Error ? err.message : 'Failed to load chapter')
-    }
-  }
-
-  const loadAnnotations = async (chapterId: string) => {
-    if (!bookId) return
-    try {
-      const res = await fetch(`/api/annotations?book_id=${bookId}&chapter_id=${chapterId}`)
-      if (!res.ok) return
-      const data = await res.json()
-      setAnnotations(data.items || [])
-    } catch (err) {
-      console.error(err)
-    }
-  }
+  useEffect(() => {
+    // eslint-disable-next-line react-hooks/set-state-in-effect
+    void loadBook()
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [bookId])
 
   const handleTextSelection = useCallback(() => {
     const selection = window.getSelection()

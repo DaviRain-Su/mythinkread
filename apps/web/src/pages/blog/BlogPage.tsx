@@ -27,23 +27,22 @@ export default function BlogPage() {
   const [loading, setLoading] = useState(true)
 
   useEffect(() => {
+    const loadBlog = async () => {
+      if (!subdomain) return
+      try {
+        const res = await fetch(`/api/blog/${subdomain}`)
+        if (!res.ok) throw new Error('Failed to load blog')
+        const data = await res.json()
+        setConfig(data.config)
+        setPosts(data.posts || [])
+      } catch (err) {
+        console.error(err)
+      } finally {
+        setLoading(false)
+      }
+    }
     loadBlog()
   }, [subdomain])
-
-  const loadBlog = async () => {
-    if (!subdomain) return
-    try {
-      const res = await fetch(`/api/blog/${subdomain}`)
-      if (!res.ok) throw new Error('Failed to load blog')
-      const data = await res.json()
-      setConfig(data.config)
-      setPosts(data.posts || [])
-    } catch (err) {
-      console.error(err)
-    } finally {
-      setLoading(false)
-    }
-  }
 
   const getTypeLabel = (type: string) => {
     const labels: Record<string, string> = {

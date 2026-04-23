@@ -24,25 +24,25 @@ export default function PublicDomainBooksPage() {
   const [loading, setLoading] = useState(true)
 
   useEffect(() => {
+    const loadBooks = async () => {
+      try {
+        const url = activeCategory
+          ? `/api/public-domain/books?category=${activeCategory}`
+          : '/api/public-domain/books'
+        const res = await fetch(url)
+        if (!res.ok) throw new Error('Failed to load books')
+        const data = await res.json()
+        setBooks(data.items || [])
+        setCategories(data.categories || [])
+      } catch (err) {
+        console.error(err)
+      } finally {
+        setLoading(false)
+      }
+    }
     loadBooks()
   }, [activeCategory])
 
-  const loadBooks = async () => {
-    try {
-      const url = activeCategory
-        ? `/api/public-domain/books?category=${activeCategory}`
-        : '/api/public-domain/books'
-      const res = await fetch(url)
-      if (!res.ok) throw new Error('Failed to load books')
-      const data = await res.json()
-      setBooks(data.items || [])
-      setCategories(data.categories || [])
-    } catch (err) {
-      console.error(err)
-    } finally {
-      setLoading(false)
-    }
-  }
 
   if (loading) {
     return <div style={{ textAlign: 'center', padding: '3rem' }}>Loading...</div>

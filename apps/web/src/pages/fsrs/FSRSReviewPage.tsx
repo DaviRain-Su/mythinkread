@@ -44,28 +44,27 @@ export default function FSRSReviewPage() {
   const [completed, setCompleted] = useState(false)
 
   useEffect(() => {
+    const loadDueCards = async () => {
+      try {
+        const token = localStorage.getItem('mtr_token')
+        const res = await fetch('/api/fsrs/due', {
+          headers: { Authorization: `Bearer ${token}` },
+        })
+        if (!res.ok) throw new Error('Failed to load cards')
+        const data = await res.json()
+        setCards(data.due_cards || [])
+        setStats(data.stats || null)
+        setCurrentIndex(0)
+        setShowAnswer(false)
+        setCompleted((data.due_cards || []).length === 0)
+      } catch (err) {
+        console.error(err)
+      } finally {
+        setLoading(false)
+      }
+    }
     loadDueCards()
   }, [])
-
-  const loadDueCards = async () => {
-    try {
-      const token = localStorage.getItem('mtr_token')
-      const res = await fetch('/api/fsrs/due', {
-        headers: { Authorization: `Bearer ${token}` },
-      })
-      if (!res.ok) throw new Error('Failed to load cards')
-      const data = await res.json()
-      setCards(data.due_cards || [])
-      setStats(data.stats || null)
-      setCurrentIndex(0)
-      setShowAnswer(false)
-      setCompleted((data.due_cards || []).length === 0)
-    } catch (err) {
-      console.error(err)
-    } finally {
-      setLoading(false)
-    }
-  }
 
   const handleGrade = async (grade: number) => {
     const card = cards[currentIndex]

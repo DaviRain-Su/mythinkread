@@ -102,7 +102,7 @@ function Node({ node, isSelected, onClick }: { node: WikiNode; isSelected: boole
           <meshBasicMaterial
             color="#ff4444"
             transparent
-            opacity={0.1 + Math.sin(Date.now() * 0.003) * 0.05}
+            opacity={0.1 + Math.sin((node.id.charCodeAt(0) || 0) * 0.003) * 0.05}
           />
         </mesh>
       )}

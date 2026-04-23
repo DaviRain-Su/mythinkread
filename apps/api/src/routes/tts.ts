@@ -1,9 +1,9 @@
 import { Hono } from 'hono'
-import type { Env } from '../index'
+import type { Env, AuthedUser } from '../index'
 import { requireSecret, devMockValue } from '../lib/env-guard'
 import { recordUpload } from '../lib/cost-monitor'
 
-const tts = new Hono<{ Bindings: Env }>()
+const tts = new Hono<{ Bindings: Env; Variables: { user: AuthedUser; jwtPayload: AuthedUser } }>()
 
 // Auth middleware
 tts.use('*', async (c, next) => {
@@ -13,8 +13,7 @@ tts.use('*', async (c, next) => {
     try {
       const { verifyToken } = await import('../lib/jwt')
       const payload = await verifyToken(token, c.env)
-      // @ts-ignore
-      c.set('user', payload)
+      c.set('user', payload as AuthedUser)
     } catch {
       // ignore
     }
@@ -144,10 +143,10 @@ tts.post('/generate', async (c) => {
 
   if (cached) {
     return c.json({
-      id: (cached as any).id,
+      id: (cached as { id?: string }).id,
       status: 'completed',
-      audio_url: (cached as any).audio_url,
-      duration: (cached as any).duration
+      audio_url: (cached as { audio_url?: string }).audio_url,
+      duration: (cached as { duration?: number }).duration
     })
   }
 
@@ -192,7 +191,7 @@ tts.post('/generate', async (c) => {
   // Build public URL. In production this should be a custom domain or R2 public bucket URL.
   // We use a convention: if R2_PUBLIC_URL is set in env (not in typings yet), use it;
   // otherwise fall back to a placeholder pattern that the frontend can resolve via a Worker route.
-  const publicBase = (c.env as any).R2_PUBLIC_URL || `https://r2.mythinkread.workers.dev`
+  const publicBase = c.env.R2_PUBLIC_URL || `https://r2.mythinkread.workers.dev`
   const audioUrl = `${publicBase}/${r2Key}`
   const duration = isMock ? Math.ceil(text.length / 5) : estimateDuration(text)
 
@@ -231,10 +230,10 @@ tts.get('/status/:id', async (c) => {
   }
 
   return c.json({
-    id: (record as any).id,
-    status: (record as any).status,
-    audio_url: (record as any).audio_url,
-    duration: (record as any).duration
+    id: (record as { id?: string }).id,
+    status: (record as { status?: string }).status,
+    audio_url: (record as { audio_url?: string }).audio_url,
+    duration: (record as { duration?: number }).duration
   })
 })
 

@@ -1,9 +1,9 @@
 import { Hono } from 'hono'
 import nacl from 'tweetnacl'
 import bs58 from 'bs58'
-import type { Env } from '../index'
+import type { Env, AuthedUser } from '../index'
 
-const solana = new Hono<{ Bindings: Env }>()
+const solana = new Hono<{ Bindings: Env; Variables: { user: AuthedUser; jwtPayload: AuthedUser } }>()
 
 const NONCE_TTL_SECONDS = 5 * 60 // 5 minutes
 const SOLANA_ADDRESS_REGEX = /^[1-9A-HJ-NP-Za-km-z]{32,44}$/
@@ -29,8 +29,7 @@ solana.use('*', async (c, next) => {
   try {
     const { verifyToken } = await import('../lib/jwt')
     const payload = await verifyToken(token, c.env)
-    // @ts-ignore
-    c.set('user', payload)
+    c.set('user', payload as AuthedUser)
     await next()
   } catch {
     return c.json({ error: 'INVALID_TOKEN' }, 401)
@@ -68,8 +67,7 @@ solana.get('/nonce', async (c) => {
  * On success, stores the wallet address on the authenticated user and invalidates the nonce.
  */
 solana.post('/link', async (c) => {
-  // @ts-ignore
-  const user = c.get('user') as { userId: string }
+  const user = c.get('user')
   const db = c.env.DB
 
   let body: { wallet_address?: string; signature?: string; message?: string }
@@ -140,8 +138,7 @@ solana.post('/link', async (c) => {
 
 // GET /api/solana/wallet - Get linked wallet
 solana.get('/wallet', async (c) => {
-  // @ts-ignore
-  const user = c.get('user') as { userId: string }
+  const user = c.get('user')
   const db = c.env.DB
 
   const result = await db
@@ -156,8 +153,7 @@ solana.get('/wallet', async (c) => {
 
 // POST /api/solana/unlink - Unlink wallet
 solana.post('/unlink', async (c) => {
-  // @ts-ignore
-  const user = c.get('user') as { userId: string }
+  const user = c.get('user')
   const db = c.env.DB
 
   await db
@@ -192,8 +188,7 @@ solana.get('/nfts/:wallet', async (c) => {
 
 // POST /api/solana/mint - Mint book as NFT (placeholder, unchanged)
 solana.post('/mint/:bookId', async (c) => {
-  // @ts-ignore
-  const user = c.get('user') as { userId: string }
+  const user = c.get('user')
   const db = c.env.DB
   const bookId = c.req.param('bookId')
 

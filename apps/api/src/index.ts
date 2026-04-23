@@ -39,9 +39,16 @@ export interface Env {
   BUNDLR_PRIVATE_KEY: string
   AZURE_TTS_KEY: string
   ENVIRONMENT: string
+  R2_PUBLIC_URL?: string
 }
 
-const app = new Hono<{ Bindings: Env }>()
+export interface AuthedUser {
+  userId: string
+  username: string
+  role: string
+}
+
+const app = new Hono<{ Bindings: Env; Variables: { user: AuthedUser; jwtPayload: AuthedUser } }>()
 
 app.use(logger())
 app.use(cors({

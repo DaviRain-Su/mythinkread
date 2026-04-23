@@ -2,13 +2,9 @@ import { Hono } from 'hono'
 import { zValidator } from '@hono/zod-validator'
 import { z } from 'zod'
 import { generateText, generateContinuation, generateRewrite, generateCoverDescription, moderateContent } from '../lib/ai'
-import type { Env } from '../index'
+import type { Env, AuthedUser } from '../index'
 
-interface AiVariables {
-  user: { userId: string; username: string }
-}
-
-const ai = new Hono<{ Bindings: Env; Variables: AiVariables }>()
+const ai = new Hono<{ Bindings: Env; Variables: { user: AuthedUser } }>()
 
 /**
  * TTL for AI draft snapshots in KV.
@@ -88,7 +84,7 @@ const generateSchema = z.object({
 
 // POST /api/ai/generate
 ai.post('/generate', zValidator('json', generateSchema), async (c) => {
-  const user = c.get('user') as { userId: string; username: string }
+  const user = c.get('user')
   const { prompt, context, max_tokens, temperature } = c.req.valid('json')
 
   // Rate limit: 10 requests per minute per user
@@ -129,7 +125,7 @@ const continueSchema = z.object({
 
 // POST /api/ai/continue
 ai.post('/continue', zValidator('json', continueSchema), async (c) => {
-  const user = c.get('user') as { userId: string; username: string }
+  const user = c.get('user')
   const { previous_text, direction, max_tokens } = c.req.valid('json')
 
   const allowed = await checkRateLimit(c.env.KV, `ai:${user.userId}`, 10, 60)
@@ -154,7 +150,7 @@ const rewriteSchema = z.object({
 
 // POST /api/ai/rewrite
 ai.post('/rewrite', zValidator('json', rewriteSchema), async (c) => {
-  const user = c.get('user') as { userId: string; username: string }
+  const user = c.get('user')
   const { text, style } = c.req.valid('json')
 
   const allowed = await checkRateLimit(c.env.KV, `ai:${user.userId}`, 10, 60)
@@ -178,7 +174,7 @@ const coverSchema = z.object({
 
 // POST /api/ai/cover
 ai.post('/cover', zValidator('json', coverSchema), async (c) => {
-  const user = c.get('user') as { userId: string; username: string }
+  const user = c.get('user')
   const { description } = c.req.valid('json')
 
   const allowed = await checkRateLimit(c.env.KV, `ai:${user.userId}`, 10, 60)

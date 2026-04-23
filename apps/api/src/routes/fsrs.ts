@@ -1,18 +1,16 @@
 import { Hono } from 'hono'
-import type { Env } from '../index'
+import type { Env, AuthedUser } from '../index'
 import { verifyToken } from '../lib/jwt'
 import {
   Grade,
   initState,
   review,
-  nextInterval,
-  retrievability,
   DEFAULT_WEIGHTS,
   serializeWeights,
   type FSRSState,
 } from '../lib/fsrs'
 
-const fsrsRoutes = new Hono<{ Bindings: Env }>()
+const fsrsRoutes = new Hono<{ Bindings: Env; Variables: { jwtPayload: AuthedUser } }>()
 
 // Middleware: require auth
 fsrsRoutes.use('*', async (c, next) => {
@@ -22,16 +20,13 @@ fsrsRoutes.use('*', async (c, next) => {
   }
   const token = auth.slice(7)
   const payload = await verifyToken(token, c.env)
-  if (!payload) {
-    return c.json({ error: 'Invalid token' }, 401)
-  }
-  c.set('jwtPayload' as never, payload)
+  c.set('jwtPayload', payload)
   await next()
 })
 
 // GET /api/fsrs/cards — list user's memory cards
 fsrsRoutes.get('/cards', async (c) => {
-  const payload = c.get('jwtPayload' as never) as { userId: string }
+  const payload = c.get('jwtPayload')
   const userId = payload.userId
   const bookId = c.req.query('book_id')
   const dueOnly = c.req.query('due') === '1'
@@ -64,7 +59,7 @@ fsrsRoutes.get('/cards', async (c) => {
 
 // POST /api/fsrs/cards — create a new memory card
 fsrsRoutes.post('/cards', async (c) => {
-  const payload = c.get('jwtPayload' as never) as { userId: string }
+  const payload = c.get('jwtPayload')
   const userId = payload.userId
   const body = await c.req.json()
 
@@ -130,7 +125,7 @@ fsrsRoutes.post('/cards', async (c) => {
 
 // POST /api/fsrs/cards/:id/review — submit a review
 fsrsRoutes.post('/cards/:id/review', async (c) => {
-  const payload = c.get('jwtPayload' as never) as { userId: string }
+  const payload = c.get('jwtPayload')
   const userId = payload.userId
   const cardId = c.req.param('id')
   const body = await c.req.json()
@@ -234,7 +229,7 @@ fsrsRoutes.post('/cards/:id/review', async (c) => {
 
 // GET /api/fsrs/due — get today's due cards with stats
 fsrsRoutes.get('/due', async (c) => {
-  const payload = c.get('jwtPayload' as never) as { userId: string }
+  const payload = c.get('jwtPayload')
   const userId = payload.userId
   const now = Math.floor(Date.now() / 1000)
   const db = c.env.DB
@@ -273,7 +268,7 @@ fsrsRoutes.get('/due', async (c) => {
 
 // DELETE /api/fsrs/cards/:id
 fsrsRoutes.delete('/cards/:id', async (c) => {
-  const payload = c.get('jwtPayload' as never) as { userId: string }
+  const payload = c.get('jwtPayload')
   const userId = payload.userId
   const cardId = c.req.param('id')
 
@@ -287,7 +282,7 @@ fsrsRoutes.delete('/cards/:id', async (c) => {
 
 // POST /api/fsrs/cards/:id/suspend — suspend/resume card
 fsrsRoutes.post('/cards/:id/suspend', async (c) => {
-  const payload = c.get('jwtPayload' as never) as { userId: string }
+  const payload = c.get('jwtPayload')
   const userId = payload.userId
   const cardId = c.req.param('id')
   const body = await c.req.json()

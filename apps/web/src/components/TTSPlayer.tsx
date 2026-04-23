@@ -24,7 +24,29 @@ export default function TTSPlayer({ text, bookId, chapterId }: TTSPlayerProps) {
   const [progress, setProgress] = useState(0)
   const audioRef = useRef<HTMLAudioElement>(null)
 
+  const handleTimeUpdate = () => {
+    if (audioRef.current) {
+      const progress = (audioRef.current.currentTime / audioRef.current.duration) * 100
+      setProgress(progress)
+    }
+  }
+
+  const handleEnded = () => {
+    setIsPlaying(false)
+    setProgress(0)
+  }
+
   useEffect(() => {
+    const loadVoices = async () => {
+      try {
+        const res = await fetch('/api/tts/voices')
+        if (!res.ok) return
+        const data = await res.json()
+        setVoices(data.voices || [])
+      } catch (err) {
+        console.error(err)
+      }
+    }
     loadVoices()
   }, [])
 
@@ -38,17 +60,6 @@ export default function TTSPlayer({ text, bookId, chapterId }: TTSPlayerProps) {
       }
     }
   }, [audioUrl])
-
-  const loadVoices = async () => {
-    try {
-      const res = await fetch('/api/tts/voices')
-      if (!res.ok) return
-      const data = await res.json()
-      setVoices(data.voices || [])
-    } catch (err) {
-      console.error(err)
-    }
-  }
 
   const handleGenerate = async () => {
     if (!text) return
@@ -93,18 +104,6 @@ export default function TTSPlayer({ text, bookId, chapterId }: TTSPlayerProps) {
       audioRef.current.play()
     }
     setIsPlaying(!isPlaying)
-  }
-
-  const handleTimeUpdate = () => {
-    if (audioRef.current) {
-      const progress = (audioRef.current.currentTime / audioRef.current.duration) * 100
-      setProgress(progress)
-    }
-  }
-
-  const handleEnded = () => {
-    setIsPlaying(false)
-    setProgress(0)
   }
 
   const handleSeek = (e: React.ChangeEvent<HTMLInputElement>) => {

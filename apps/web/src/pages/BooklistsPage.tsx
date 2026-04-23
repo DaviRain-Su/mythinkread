@@ -17,21 +17,20 @@ export default function BooklistsPage() {
   const [loading, setLoading] = useState(true)
 
   useEffect(() => {
+    const loadBooklists = async () => {
+      try {
+        const res = await fetch('/api/booklists?page=1&limit=50')
+        if (!res.ok) throw new Error('Failed to load booklists')
+        const data = await res.json()
+        setBooklists(data.items || [])
+      } catch (err) {
+        console.error(err)
+      } finally {
+        setLoading(false)
+      }
+    }
     loadBooklists()
   }, [])
-
-  const loadBooklists = async () => {
-    try {
-      const res = await fetch('/api/booklists?page=1&limit=50')
-      if (!res.ok) throw new Error('Failed to load booklists')
-      const data = await res.json()
-      setBooklists(data.items || [])
-    } catch (err) {
-      console.error(err)
-    } finally {
-      setLoading(false)
-    }
-  }
 
   if (loading) {
     return <div style={{ textAlign: 'center', padding: '3rem' }}>Loading...</div>

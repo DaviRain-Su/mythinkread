@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from 'react'
+import { useState, useEffect, useCallback, useRef } from 'react'
 import { useNavigate, useSearchParams } from 'react-router-dom'
 
 interface SearchResult {
@@ -32,11 +32,11 @@ export default function SearchPage() {
   const [suggestions, setSuggestions] = useState<Array<{ text: string; type: string }>>([])
   const [showSuggestions, setShowSuggestions] = useState(false)
 
-  const search = useCallback(async () => {
-    if (!query.trim()) return
+  const search = useCallback(async (q: string) => {
+    if (!q.trim()) return
     setLoading(true)
     try {
-      const res = await fetch(`/api/search?q=${encodeURIComponent(query)}&type=${activeType}`)
+      const res = await fetch(`/api/search?q=${encodeURIComponent(q)}&type=${activeType}`)
       if (!res.ok) throw new Error('Search failed')
       const data = await res.json()
       setResults(data.results || {})
@@ -45,15 +45,20 @@ export default function SearchPage() {
     } finally {
       setLoading(false)
     }
-  }, [query, activeType])
+  }, [activeType])
 
+  const didInitRef = useRef(false)
   useEffect(() => {
+    if (didInitRef.current) return
+    didInitRef.current = true
     const q = searchParams.get('q')
     if (q) {
+      // eslint-disable-next-line react-hooks/set-state-in-effect
       setQuery(q)
-      search()
+      search(q)
     }
-  }, [searchParams])
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [])
 
   const loadSuggestions = async (input: string) => {
     if (input.length < 1) {
@@ -70,11 +75,11 @@ export default function SearchPage() {
     }
   }
 
-  const handleSearch = () => {
+  const handleSearch = useCallback(() => {
     if (!query.trim()) return
     setSearchParams({ q: query, type: activeType })
     setShowSuggestions(false)
-  }
+  }, [query, activeType, setSearchParams])
 
   const types = [
     { key: 'all', label: '全部' },

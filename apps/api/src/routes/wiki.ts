@@ -1,15 +1,15 @@
-import { Hono } from 'hono'
-import type { Env } from '../index'
+import { Hono, type Context } from 'hono'
+import type { Env, AuthedUser } from '../index'
 import { verifyToken } from '../lib/jwt'
 
-const wikiRoutes = new Hono<{ Bindings: Env }>()
+const wikiRoutes = new Hono<{ Bindings: Env; Variables: { jwtPayload: AuthedUser } }>()
 
 // Optional auth middleware
-async function optionalAuth(c: any, next: any) {
+async function optionalAuth(c: Context<{ Bindings: Env; Variables: { jwtPayload: AuthedUser } }>, next: () => Promise<void>) {
   const auth = c.req.header('Authorization')
   if (auth?.startsWith('Bearer ')) {
     const payload = await verifyToken(auth.slice(7), c.env)
-    if (payload) c.set('jwtPayload' as never, payload)
+    if (payload) c.set('jwtPayload', payload)
   }
   await next()
 }
@@ -21,7 +21,7 @@ wikiRoutes.get('/books/:bookId/entries', optionalAuth, async (c) => {
   const db = c.env.DB
 
   let sql = 'SELECT * FROM wiki_entries WHERE book_id = ? AND status = ?'
-  const params: (string | number)[] = [bookId, 'active']
+  const params: (string | number | undefined)[] = [bookId, 'active']
 
   if (category) {
     sql += ' AND category = ?'
@@ -99,7 +99,7 @@ wikiRoutes.post('/books/:bookId/entries', async (c) => {
   }
 
   const bookId = c.req.param('bookId')
-  const body = await c.req.json()
+  const body = await c.req.json() as Record<string, unknown>
   const { slug, title, title_zh, category, content, summary } = body
 
   if (!slug || !title || !category || !content) {
@@ -119,7 +119,7 @@ wikiRoutes.post('/books/:bookId/entries', async (c) => {
         ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`
       )
       .bind(
-        id, bookId, slug, title, title_zh || null, category, content, summary || null,
+        id, bookId, String(slug), String(title), title_zh ? String(title_zh) : null, String(category), String(content), summary ? String(summary) : null,
         0, payload.userId, 1, 'active', now, now
       )
       .run()
@@ -130,12 +130,12 @@ wikiRoutes.post('/books/:bookId/entries', async (c) => {
         `INSERT INTO wiki_revisions (id, entry_id, user_id, content, summary, version, created_at)
          VALUES (?, ?, ?, ?, ?, ?, ?)`
       )
-      .bind(crypto.randomUUID(), id, payload.userId, content, 'Initial version', 1, now)
+      .bind(crypto.randomUUID(), id, payload.userId, String(content), 'Initial version', 1, now)
       .run()
 
     return c.json({ id, slug, title }, 201)
-  } catch (err: any) {
-    if (err.message?.includes('UNIQUE constraint failed')) {
+  } catch (err: unknown) {
+    if (err instanceof Error && err.message?.includes('UNIQUE constraint failed')) {
       return c.json({ error: 'Slug already exists for this book' }, 409)
     }
     throw err
@@ -155,7 +155,7 @@ wikiRoutes.put('/books/:bookId/entries/:slug', async (c) => {
 
   const bookId = c.req.param('bookId')
   const slug = c.req.param('slug')
-  const body = await c.req.json()
+  const body = await c.req.json() as Record<string, unknown>
   const { title, title_zh, content, summary } = body
 
   const db = c.env.DB
@@ -184,7 +184,7 @@ wikiRoutes.put('/books/:bookId/entries/:slug', async (c) => {
         updated_at = ?
       WHERE id = ?`
     )
-    .bind(title, title_zh, content, summary, newVersion, now, entry.id)
+    .bind(title ?? null, title_zh ?? null, content ?? null, summary ?? null, newVersion, now, entry.id)
     .run()
 
   // Create revision
@@ -197,8 +197,8 @@ wikiRoutes.put('/books/:bookId/entries/:slug', async (c) => {
       crypto.randomUUID(),
       entry.id,
       payload.userId,
-      content || entry.content,
-      body.change_summary || 'Updated',
+      content ? String(content) : entry.content,
+      body.change_summary ? String(body.change_summary) : 'Updated',
       newVersion,
       now
     )
@@ -219,7 +219,7 @@ wikiRoutes.post('/books/:bookId/relations', async (c) => {
   }
 
   const bookId = c.req.param('bookId')
-  const body = await c.req.json()
+  const body = await c.req.json() as Record<string, unknown>
   const { from_entry_id, to_entry_id, relation_type, context } = body
 
   if (!from_entry_id || !to_entry_id || !relation_type) {
@@ -235,12 +235,12 @@ wikiRoutes.post('/books/:bookId/relations', async (c) => {
         `INSERT INTO wiki_relations (id, book_id, from_entry_id, to_entry_id, relation_type, context, created_at)
          VALUES (?, ?, ?, ?, ?, ?, ?)`
       )
-      .bind(crypto.randomUUID(), bookId, from_entry_id, to_entry_id, relation_type, context || null, now)
+      .bind(crypto.randomUUID(), bookId, String(from_entry_id), String(to_entry_id), String(relation_type), context ? String(context) : null, now)
       .run()
 
     return c.json({ success: true }, 201)
-  } catch (err: any) {
-    if (err.message?.includes('UNIQUE constraint failed')) {
+  } catch (err: unknown) {
+    if (err instanceof Error && err.message?.includes('UNIQUE constraint failed')) {
       return c.json({ error: 'Relation already exists' }, 409)
     }
     throw err

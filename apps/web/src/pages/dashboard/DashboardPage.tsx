@@ -150,7 +150,7 @@ export default function DashboardPage() {
                     zIndex: 10,
                   }}
                 >
-                  {days[tooltipPos.weekIdx][tooltipPos.dayIdx] * 15 + Math.floor(Math.random() * 15)} min
+                  {days[tooltipPos.weekIdx][tooltipPos.dayIdx] * 15 + Math.floor(((days[tooltipPos.weekIdx][tooltipPos.dayIdx] * 37) % 15))} min
                 </div>
               )}
             </div>

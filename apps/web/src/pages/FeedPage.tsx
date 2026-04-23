@@ -15,24 +15,23 @@ export default function FeedPage() {
   const [loading, setLoading] = useState(true)
 
   useEffect(() => {
+    const loadFeed = async () => {
+      try {
+        const token = localStorage.getItem('mtr_token')
+        const res = await fetch('/api/social/feed', {
+          headers: token ? { Authorization: `Bearer ${token}` } : {}
+        })
+        if (!res.ok) throw new Error('Failed to load feed')
+        const data = await res.json()
+        setActivities(data.items || [])
+      } catch (err) {
+        console.error(err)
+      } finally {
+        setLoading(false)
+      }
+    }
     loadFeed()
   }, [])
-
-  const loadFeed = async () => {
-    try {
-      const token = localStorage.getItem('mtr_token')
-      const res = await fetch('/api/social/feed', {
-        headers: token ? { Authorization: `Bearer ${token}` } : {}
-      })
-      if (!res.ok) throw new Error('Failed to load feed')
-      const data = await res.json()
-      setActivities(data.items || [])
-    } catch (err) {
-      console.error(err)
-    } finally {
-      setLoading(false)
-    }
-  }
 
   const getActivityText = (activity: Activity) => {
     switch (activity.type) {
