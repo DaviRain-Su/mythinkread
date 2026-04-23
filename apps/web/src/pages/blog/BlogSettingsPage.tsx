@@ -145,8 +145,8 @@ export default function BlogSettingsPage() {
                 <label key={item.key} style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', cursor: 'pointer' }}>
                   <input
                     type="checkbox"
-                    checked={(config as any)[item.key] === 1}
-                    onChange={(e) => setConfig({ ...config, [item.key]: e.target.checked ? 1 : 0 } as BlogConfig)}
+                    checked={config[item.key as keyof BlogConfig] === 1}
+                    onChange={(e) => setConfig({ ...config, [item.key]: e.target.checked ? 1 : 0 })}
                   />
                   <span>{item.label}</span>
                 </label>

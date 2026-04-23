@@ -1,8 +1,49 @@
 import { Hono } from 'hono'
 import { generateUUID } from '../lib/uuid'
-import type { Env } from '../index'
+import type { Env, AuthedUser } from '../index'
 
-const blog = new Hono<{ Bindings: Env }>()
+interface BlogConfigRow {
+  user_id: string
+  is_public?: number
+  auto_publish_comment?: number
+  auto_publish_annotation?: number
+  title?: string
+  description?: string
+  theme?: string
+  avatar_cid?: string
+  social_links?: string
+  auto_publish_ai_summary?: number
+  subdomain?: string
+}
+
+interface UserInfoRow {
+  username?: string
+  display_name?: string
+}
+
+interface PostRow {
+  id: string
+  user_id: string
+  type: string
+  title: string
+  content: string
+  source_book_id?: string | null
+  source_chapter_id?: string | null
+  source_comment_id?: string | null
+  source_annotation_id?: string | null
+  tags?: string | null
+  is_public?: number
+  created_at?: number
+  updated_at?: number
+  book_title?: string
+  chapter_title?: string
+  book_id?: string
+  chapter_id?: string
+  selected_text?: string
+  note?: string
+}
+
+const blog = new Hono<{ Bindings: Env; Variables: { user: AuthedUser; jwtPayload: AuthedUser } }>()
 
 // Auth middleware
 blog.use('*', async (c, next) => {
@@ -12,8 +53,7 @@ blog.use('*', async (c, next) => {
     try {
       const { verifyToken } = await import('../lib/jwt')
       const payload = await verifyToken(token, c.env)
-      // @ts-ignore
-      c.set('user', payload)
+      c.set('user', payload as AuthedUser)
     } catch {
       // ignore
     }
@@ -23,7 +63,6 @@ blog.use('*', async (c, next) => {
 
 // GET /api/blog/config - Get blog config
 blog.get('/config', async (c) => {
-  // @ts-ignore
   const user = c.get('user') as { userId: string } | undefined
   if (!user) {
     return c.json({ error: 'UNAUTHORIZED' }, 401)
@@ -32,20 +71,20 @@ blog.get('/config', async (c) => {
   const db = c.env.DB
   const config = await db.prepare(`
     SELECT * FROM user_blog_configs WHERE user_id = ?
-  `).bind(user.userId).first()
+  `).bind(user.userId).first<BlogConfigRow>()
 
   if (!config) {
     // Create default config
     const now = Math.floor(Date.now() / 1000)
     const userInfo = await db.prepare('SELECT username, display_name FROM users WHERE id = ?')
-      .bind(user.userId).first()
-    
-    const subdomain = (userInfo as any)?.username || `user-${user.userId.slice(0, 8)}`
-    
+      .bind(user.userId).first<UserInfoRow>()
+
+    const subdomain = userInfo?.username || `user-${user.userId.slice(0, 8)}`
+
     await db.prepare(`
       INSERT INTO user_blog_configs (id, user_id, subdomain, title, description, created_at, updated_at)
       VALUES (?, ?, ?, ?, ?, ?, ?)
-    `).bind(generateUUID(), user.userId, subdomain, (userInfo as any)?.display_name || subdomain, '', now, now).run()
+    `).bind(generateUUID(), user.userId, subdomain, userInfo?.display_name || subdomain, '', now, now).run()
 
     const newConfig = await db.prepare(`
       SELECT * FROM user_blog_configs WHERE user_id = ?
@@ -59,7 +98,6 @@ blog.get('/config', async (c) => {
 
 // PUT /api/blog/config - Update blog config
 blog.put('/config', async (c) => {
-  // @ts-ignore
   const user = c.get('user') as { userId: string } | undefined
   if (!user) {
     return c.json({ error: 'UNAUTHORIZED' }, 401)
@@ -104,13 +142,12 @@ blog.get('/posts', async (c) => {
   // Check blog is public or user is owner
   const blogConfig = await db.prepare(`
     SELECT is_public FROM user_blog_configs WHERE user_id = ?
-  `).bind(userId).first()
+  `).bind(userId).first<BlogConfigRow>()
 
-  // @ts-ignore
   const currentUser = c.get('user') as { userId: string } | undefined
   const isOwner = currentUser?.userId === userId
 
-  if (!isOwner && (!blogConfig || (blogConfig as any).is_public !== 1)) {
+  if (!isOwner && (!blogConfig || blogConfig.is_public !== 1)) {
     return c.json({ error: 'BLOG_NOT_PUBLIC' }, 403)
   }
 
@@ -137,7 +174,6 @@ blog.get('/posts', async (c) => {
 
 // POST /api/blog/posts - Create blog post
 blog.post('/posts', async (c) => {
-  // @ts-ignore
   const user = c.get('user') as { userId: string } | undefined
   if (!user) {
     return c.json({ error: 'UNAUTHORIZED' }, 401)
@@ -180,7 +216,7 @@ blog.get('/:subdomain', async (c) => {
     WHERE p.user_id = ? AND p.is_public = 1
     ORDER BY p.created_at DESC
     LIMIT 20
-  `).bind((config as any).user_id).all()
+  `).bind((config as unknown as BlogConfigRow).user_id).all()
 
   return c.json({
     config,
@@ -190,8 +226,7 @@ blog.get('/:subdomain', async (c) => {
 
 // POST /api/blog/generate - Auto-generate blog posts from user activity
 blog.post('/generate', async (c) => {
-  // @ts-ignore
-  const user = c.get('user') as { userId: string } | undefined
+  const user = c.get('user')
   if (!user) {
     return c.json({ error: 'UNAUTHORIZED' }, 401)
   }
@@ -201,17 +236,17 @@ blog.post('/generate', async (c) => {
 
   const config = await db.prepare(`
     SELECT * FROM user_blog_configs WHERE user_id = ?
-  `).bind(user.userId).first()
+  `).bind(user.userId).first<BlogConfigRow>()
 
   if (!config) {
     return c.json({ error: 'BLOG_NOT_CONFIGURED' }, 400)
   }
 
-  const generatedPosts = []
+  const generatedPosts: Array<{ id: string; type: string }> = []
   const now = Math.floor(Date.now() / 1000)
 
   // Generate from comments
-  if (types?.includes('comment') && (config as any).auto_publish_comment === 1) {
+  if (types?.includes('comment') && config.auto_publish_comment === 1) {
     const comments = await db.prepare(`
       SELECT c.*, b.title as book_title
       FROM comments c
@@ -224,16 +259,17 @@ blog.post('/generate', async (c) => {
 
     for (const comment of comments.results || []) {
       const postId = generateUUID()
+      const row = comment as unknown as PostRow
       await db.prepare(`
         INSERT INTO user_blog_posts (id, user_id, type, title, content, source_book_id, source_comment_id, created_at, updated_at)
         VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
-      `).bind(postId, user.userId, 'comment', `评论《${(comment as any).book_title}》`, (comment as any).content, (comment as any).book_id, (comment as any).id, now, now).run()
+      `).bind(postId, user.userId, 'comment', `评论《${row.book_title}》`, row.content, row.source_book_id || row.book_id || null, row.id, now, now).run()
       generatedPosts.push({ id: postId, type: 'comment' })
     }
   }
 
   // Generate from annotations
-  if (types?.includes('annotation') && (config as any).auto_publish_annotation === 1) {
+  if (types?.includes('annotation') && config.auto_publish_annotation === 1) {
     const annotations = await db.prepare(`
       SELECT a.*, b.title as book_title, c.title as chapter_title
       FROM annotations a
@@ -247,11 +283,12 @@ blog.post('/generate', async (c) => {
 
     for (const annotation of annotations.results || []) {
       const postId = generateUUID()
-      const content = `**原文：** ${(annotation as any).selected_text}\n\n**批注：** ${(annotation as any).note || ''}`
+      const row = annotation as unknown as PostRow
+      const content = `**原文：** ${row.selected_text ?? ''}\n\n**批注：** ${row.note || ''}`
       await db.prepare(`
         INSERT INTO user_blog_posts (id, user_id, type, title, content, source_book_id, source_chapter_id, source_annotation_id, created_at, updated_at)
         VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
-      `).bind(postId, user.userId, 'annotation', `批注《${(annotation as any).book_title}》- ${(annotation as any).chapter_title}`, content, (annotation as any).book_id, (annotation as any).chapter_id, (annotation as any).id, now, now).run()
+      `).bind(postId, user.userId, 'annotation', `批注《${row.book_title}》- ${row.chapter_title}`, content, row.source_book_id || row.book_id || null, row.source_chapter_id || row.chapter_id || null, row.id, now, now).run()
       generatedPosts.push({ id: postId, type: 'annotation' })
     }
   }

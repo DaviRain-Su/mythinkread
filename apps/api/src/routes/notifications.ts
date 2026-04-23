@@ -8,8 +8,7 @@ notifications.use('*', requireAuth)
 
 // GET /api/notifications - List notifications
 notifications.get('/', async (c) => {
-  // @ts-ignore
-  const user = c.get('user') as { userId: string }
+  const user = c.get('user')
   const db = c.env.DB
   const page = parseInt(c.req.query('page') || '1')
   const limit = Math.min(parseInt(c.req.query('limit') || '20'), 100)
@@ -35,18 +34,17 @@ notifications.get('/', async (c) => {
   const unreadCount = await db.prepare(`
     SELECT COUNT(*) as count FROM notifications
     WHERE user_id = ? AND is_read = 0
-  `).bind(user.userId).first()
+  `).bind(user.userId).first<{ count?: number }>()
 
   return c.json({
     items: results.results || [],
-    unread_count: unreadCount?.count as number || 0
+    unread_count: unreadCount?.count ?? 0
   })
 })
 
 // POST /api/notifications/:id/read - Mark as read
 notifications.post('/:id/read', async (c) => {
-  // @ts-ignore
-  const user = c.get('user') as { userId: string }
+  const user = c.get('user')
   const db = c.env.DB
   const notificationId = c.req.param('id')
 
@@ -59,8 +57,7 @@ notifications.post('/:id/read', async (c) => {
 
 // POST /api/notifications/read-all - Mark all as read
 notifications.post('/read-all', async (c) => {
-  // @ts-ignore
-  const user = c.get('user') as { userId: string }
+  const user = c.get('user')
   const db = c.env.DB
 
   await db.prepare(`
@@ -72,8 +69,7 @@ notifications.post('/read-all', async (c) => {
 
 // DELETE /api/notifications/:id - Delete notification
 notifications.delete('/:id', async (c) => {
-  // @ts-ignore
-  const user = c.get('user') as { userId: string }
+  const user = c.get('user')
   const db = c.env.DB
   const notificationId = c.req.param('id')
 

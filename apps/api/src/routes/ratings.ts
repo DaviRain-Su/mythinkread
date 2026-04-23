@@ -17,15 +17,21 @@ const ratingSchema = z.object({
 
 // POST /api/ratings/:bookId - Rate a book
 ratings.post('/:bookId', zValidator('json', ratingSchema), async (c) => {
-  // @ts-ignore
-  const user = c.get('user') as { userId: string }
+  const user = c.get('user')
   const db = c.env.DB
   const bookId = c.req.param('bookId')
   const { score, review } = c.req.valid('json')
 
+  interface BookRatingRow {
+    id: string
+    creator_id: string
+    rating_avg?: number | null
+    rating_count?: number | null
+  }
+
   // Verify book exists and is published
   const book = await db.prepare('SELECT id, creator_id, rating_avg, rating_count FROM books WHERE id = ? AND status = ?')
-    .bind(bookId, 'published').first()
+    .bind(bookId, 'published').first<BookRatingRow>()
   if (!book) {
     return c.json({ error: 'BOOK_NOT_FOUND' }, 404)
   }
@@ -43,16 +49,17 @@ ratings.post('/:bookId', zValidator('json', ratingSchema), async (c) => {
   `).bind(generateUUID(), user.userId, bookId, score, review || null, now, now).run()
 
   // Recalculate book rating
+  interface RatingStatsRow { avg_score?: number | null; count?: number | null }
   const ratingStats = await db.prepare(`
     SELECT AVG(score) as avg_score, COUNT(*) as count
     FROM ratings WHERE book_id = ?
-  `).bind(bookId).first()
+  `).bind(bookId).first<RatingStatsRow>()
 
   await db.prepare(`
     UPDATE books SET rating_avg = ?, rating_count = ? WHERE id = ?
   `).bind(
-    Math.round((ratingStats?.avg_score as number || 0) * 10) / 10,
-    ratingStats?.count as number || 0,
+    Math.round((ratingStats?.avg_score ?? 0) * 10) / 10,
+    ratingStats?.count ?? 0,
     bookId
   ).run()
 
@@ -92,8 +99,18 @@ ratings.get('/:bookId', async (c) => {
     LIMIT ? OFFSET ?
   `).bind(bookId, limit, offset).all()
 
+  interface RatingDistRow {
+    avg_score?: number | null
+    total_count?: number | null
+    five_star?: number | null
+    four_star?: number | null
+    three_star?: number | null
+    two_star?: number | null
+    one_star?: number | null
+  }
+
   const stats = await db.prepare(`
-    SELECT 
+    SELECT
       AVG(score) as avg_score,
       COUNT(*) as total_count,
       SUM(CASE WHEN score = 5 THEN 1 ELSE 0 END) as five_star,
@@ -102,19 +119,19 @@ ratings.get('/:bookId', async (c) => {
       SUM(CASE WHEN score = 2 THEN 1 ELSE 0 END) as two_star,
       SUM(CASE WHEN score = 1 THEN 1 ELSE 0 END) as one_star
     FROM ratings WHERE book_id = ?
-  `).bind(bookId).first()
+  `).bind(bookId).first<RatingDistRow>()
 
   return c.json({
     items: results.results || [],
     stats: {
-      avg_score: Math.round((stats?.avg_score as number || 0) * 10) / 10,
-      total_count: stats?.total_count as number || 0,
+      avg_score: Math.round((stats?.avg_score ?? 0) * 10) / 10,
+      total_count: stats?.total_count ?? 0,
       distribution: {
-        5: stats?.five_star as number || 0,
-        4: stats?.four_star as number || 0,
-        3: stats?.three_star as number || 0,
-        2: stats?.two_star as number || 0,
-        1: stats?.one_star as number || 0
+        5: stats?.five_star ?? 0,
+        4: stats?.four_star ?? 0,
+        3: stats?.three_star ?? 0,
+        2: stats?.two_star ?? 0,
+        1: stats?.one_star ?? 0
       }
     }
   })
@@ -122,8 +139,7 @@ ratings.get('/:bookId', async (c) => {
 
 // GET /api/ratings/my/:bookId - Get my rating for a book
 ratings.get('/my/:bookId', async (c) => {
-  // @ts-ignore
-  const user = c.get('user') as { userId: string }
+  const user = c.get('user')
   const db = c.env.DB
   const bookId = c.req.param('bookId')
 
@@ -136,8 +152,7 @@ ratings.get('/my/:bookId', async (c) => {
 
 // DELETE /api/ratings/:bookId - Delete my rating
 ratings.delete('/:bookId', async (c) => {
-  // @ts-ignore
-  const user = c.get('user') as { userId: string }
+  const user = c.get('user')
   const db = c.env.DB
   const bookId = c.req.param('bookId')
 
@@ -145,16 +160,17 @@ ratings.delete('/:bookId', async (c) => {
     .bind(user.userId, bookId).run()
 
   // Recalculate book rating
+  interface RatingStatsRow { avg_score?: number | null; count?: number | null }
   const ratingStats = await db.prepare(`
     SELECT AVG(score) as avg_score, COUNT(*) as count
     FROM ratings WHERE book_id = ?
-  `).bind(bookId).first()
+  `).bind(bookId).first<RatingStatsRow>()
 
   await db.prepare(`
     UPDATE books SET rating_avg = ?, rating_count = ? WHERE id = ?
   `).bind(
-    Math.round((ratingStats?.avg_score as number || 0) * 10) / 10,
-    ratingStats?.count as number || 0,
+    Math.round((ratingStats?.avg_score ?? 0) * 10) / 10,
+    ratingStats?.count ?? 0,
     bookId
   ).run()
 

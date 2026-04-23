@@ -15,7 +15,7 @@ import React, { Suspense } from 'react'
 // Kumo UI Button (lazy loaded)
 const KumoButton = React.lazy(() =>
   import('@cloudflare/kumo').then((m) => ({
-    default: m.Button as unknown as React.ComponentType<any>,
+    default: m.Button as unknown as React.ComponentType<Record<string, unknown>>,
   }))
 )
 

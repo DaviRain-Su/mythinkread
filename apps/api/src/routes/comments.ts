@@ -20,8 +20,7 @@ const commentSchema = z.object({
 
 // POST /api/comments - Create comment
 comments.post('/', zValidator('json', commentSchema), async (c) => {
-  // @ts-ignore
-  const user = c.get('user') as { userId: string; username: string }
+  const user = c.get('user')
   const db = c.env.DB
   const { book_id, chapter_id, parent_id, content } = c.req.valid('json')
 
@@ -125,12 +124,11 @@ comments.post('/:id/like', async (c) => {
 
 // DELETE /api/comments/:id - Soft delete comment
 comments.delete('/:id', async (c) => {
-  // @ts-ignore
-  const user = c.get('user') as { userId: string }
+  const user = c.get('user')
   const db = c.env.DB
   const commentId = c.req.param('id')
 
-  const comment = await db.prepare('SELECT user_id FROM comments WHERE id = ?').bind(commentId).first()
+  const comment = await db.prepare('SELECT user_id FROM comments WHERE id = ?').bind(commentId).first<{ user_id: string }>()
   if (!comment) {
     return c.json({ error: 'COMMENT_NOT_FOUND' }, 404)
   }

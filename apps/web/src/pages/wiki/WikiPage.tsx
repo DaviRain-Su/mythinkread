@@ -7,12 +7,12 @@ import React, { Suspense } from 'react'
 // Kumo UI components (lazy loaded)
 const DatePicker = React.lazy(() =>
   import('@cloudflare/kumo').then((m) => ({
-    default: m.DatePicker as unknown as React.ComponentType<any>,
+    default: m.DatePicker as unknown as React.ComponentType<Record<string, unknown>>,
   }))
 )
 const KumoButton = React.lazy(() =>
   import('@cloudflare/kumo').then((m) => ({
-    default: m.Button as unknown as React.ComponentType<any>,
+    default: m.Button as unknown as React.ComponentType<Record<string, unknown>>,
   }))
 )
 

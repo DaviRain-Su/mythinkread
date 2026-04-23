@@ -40,7 +40,7 @@ export async function getContent(
         await env.KV.put(cacheKey, content, { expirationTtl: KV_CACHE_TTL })
       }
       return content
-    } catch (err) {
+    } catch {
       console.warn(`IPFS miss: ${cid}, falling back to Arweave`)
     }
   }
@@ -56,7 +56,7 @@ export async function getContent(
       }
       // TODO: Async re-pin to IPFS
       return content
-    } catch (err) {
+    } catch {
       console.error(`Arweave miss: ${arweaveTx}`)
     }
   }

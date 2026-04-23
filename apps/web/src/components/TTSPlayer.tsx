@@ -51,12 +51,13 @@ export default function TTSPlayer({ text, bookId, chapterId }: TTSPlayerProps) {
   }, [])
 
   useEffect(() => {
-    if (audioRef.current) {
-      audioRef.current.addEventListener('timeupdate', handleTimeUpdate)
-      audioRef.current.addEventListener('ended', handleEnded)
+    const audio = audioRef.current
+    if (audio) {
+      audio.addEventListener('timeupdate', handleTimeUpdate)
+      audio.addEventListener('ended', handleEnded)
       return () => {
-        audioRef.current?.removeEventListener('timeupdate', handleTimeUpdate)
-        audioRef.current?.removeEventListener('ended', handleEnded)
+        audio.removeEventListener('timeupdate', handleTimeUpdate)
+        audio.removeEventListener('ended', handleEnded)
       }
     }
   }, [audioUrl])

@@ -1,7 +1,14 @@
 import { Hono } from 'hono'
 import type { Env, AuthedUser } from '../index'
-import { requireSecret, devMockValue } from '../lib/env-guard'
+import { requireSecret } from '../lib/env-guard'
 import { recordUpload } from '../lib/cost-monitor'
+
+interface TtsCacheRow {
+  id?: string
+  status?: string
+  audio_url?: string
+  duration?: number
+}
 
 const tts = new Hono<{ Bindings: Env; Variables: { user: AuthedUser; jwtPayload: AuthedUser } }>()
 
@@ -113,8 +120,7 @@ function escapeXml(unsafe: string): string {
 
 // POST /api/tts/generate - Generate TTS audio
 tts.post('/generate', async (c) => {
-  // @ts-ignore
-  const user = c.get('user') as { userId: string } | undefined
+  const user = c.get('user')
   if (!user) {
     return c.json({ error: 'UNAUTHORIZED' }, 401)
   }
@@ -129,18 +135,25 @@ tts.post('/generate', async (c) => {
   const textHash = hashText(text)
   const now = Math.floor(Date.now() / 1000)
 
+  interface TtsCacheRow {
+    id?: string
+    status?: string
+    audio_url?: string
+    duration?: number
+  }
+
   // Check cache
   const cached = await db.prepare(`
     SELECT * FROM tts_audio_cache 
     WHERE book_id = ? AND chapter_id = ? AND voice_id = ? AND text_hash = ? AND status = 'completed'
-  `).bind(book_id || '', chapter_id || '', voice_id, textHash).first()
+  `).bind(book_id || '', chapter_id || '', voice_id, textHash).first<TtsCacheRow>()
 
   if (cached) {
     return c.json({
-      id: (cached as { id?: string }).id,
+      id: cached.id,
       status: 'completed',
-      audio_url: (cached as { audio_url?: string }).audio_url,
-      duration: (cached as { duration?: number }).duration
+      audio_url: cached.audio_url,
+      duration: cached.duration
     })
   }
 
@@ -217,17 +230,17 @@ tts.get('/status/:id', async (c) => {
 
   const record = await db.prepare(`
     SELECT * FROM tts_audio_cache WHERE id = ?
-  `).bind(id).first()
+  `).bind(id).first<TtsCacheRow>()
 
   if (!record) {
     return c.json({ error: 'NOT_FOUND' }, 404)
   }
 
   return c.json({
-    id: (record as { id?: string }).id,
-    status: (record as { status?: string }).status,
-    audio_url: (record as { audio_url?: string }).audio_url,
-    duration: (record as { duration?: number }).duration
+    id: record.id,
+    status: record.status,
+    audio_url: record.audio_url,
+    duration: record.duration
   })
 })
 

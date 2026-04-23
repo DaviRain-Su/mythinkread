@@ -1,6 +1,4 @@
 import { Hono } from 'hono'
-import { zValidator } from '@hono/zod-validator'
-import { z } from 'zod'
 import { requireAuth } from '../middleware/auth'
 import type { Env, AuthedUser } from '../index'
 
@@ -10,17 +8,34 @@ payments.use('*', requireAuth)
 
 import { generateUUID } from '../lib/uuid'
 
+interface BookRow {
+  id: string
+  creator_id: string
+  title: string
+}
+
+interface PurchaseRow {
+  created_at?: number
+}
+
+interface CreatorRow {
+  id: string
+}
+
+interface RevenueRow {
+  total?: number | null
+}
+
 // GET /api/payments/books/:bookId - Check if user has purchased book
 payments.get('/books/:bookId', async (c) => {
-  // @ts-ignore
   const user = c.get('user')
   const db = c.env.DB
   const bookId = c.req.param('bookId')
 
   // Check if book is free (books table doesn't have price column yet, assume free)
   const book = await db.prepare('SELECT id FROM books WHERE id = ?')
-    .bind(bookId).first()
-  
+    .bind(bookId).first<BookRow>()
+
   if (!book) {
     return c.json({ error: 'BOOK_NOT_FOUND' }, 404)
   }
@@ -33,20 +48,19 @@ payments.get('/books/:bookId', async (c) => {
 
   // Check purchase record
   const purchase = await db.prepare(`
-    SELECT * FROM purchases 
+    SELECT * FROM purchases
     WHERE user_id = ? AND book_id = ? AND status = 'completed'
-  `).bind(user.userId, bookId).first()
+  `).bind(user.userId, bookId).first<PurchaseRow>()
 
   return c.json({
     purchased: !!purchase,
     price,
-    purchase_date: purchase ? (purchase as any).created_at : null
+    purchase_date: purchase?.created_at ?? null
   })
 })
 
 // POST /api/payments/books/:bookId - Create purchase
 payments.post('/books/:bookId', async (c) => {
-  // @ts-ignore
   const user = c.get('user')
   const db = c.env.DB
   const bookId = c.req.param('bookId')
@@ -54,15 +68,15 @@ payments.post('/books/:bookId', async (c) => {
 
   // Get book
   const book = await db.prepare('SELECT id, creator_id, title FROM books WHERE id = ?')
-    .bind(bookId).first()
-  
+    .bind(bookId).first<BookRow>()
+
   if (!book) {
     return c.json({ error: 'BOOK_NOT_FOUND' }, 404)
   }
 
   // For now, all books are free
   const price = 0
-  
+
   // If free, auto-complete
   if (price === 0) {
     return c.json({ success: true, price: 0, message: 'Free book' })
@@ -86,10 +100,10 @@ payments.post('/books/:bookId', async (c) => {
     VALUES (?, ?, ?, ?, ?, ?, ?)
   `).bind(
     generateUUID(),
-    (book as any).creator_id,
+    book.creator_id,
     'system',
     '书籍售出',
-    `《${(book as any).title}》被购买，收入 ${price} USDC`,
+    `《${book.title}》被购买，收入 ${price} USDC`,
     bookId,
     now
   ).run()
@@ -104,7 +118,6 @@ payments.post('/books/:bookId', async (c) => {
 
 // GET /api/payments/history - Get purchase history
 payments.get('/history', async (c) => {
-  // @ts-ignore
   const user = c.get('user')
   const db = c.env.DB
   const page = parseInt(c.req.query('page') || '1')
@@ -125,14 +138,13 @@ payments.get('/history', async (c) => {
 
 // GET /api/payments/sales - Get sales history (for creators)
 payments.get('/sales', async (c) => {
-  // @ts-ignore
   const user = c.get('user')
   const db = c.env.DB
 
   // Get creator ID
   const creator = await db.prepare('SELECT id FROM creators WHERE user_id = ?')
-    .bind(user.userId).first()
-  
+    .bind(user.userId).first<CreatorRow>()
+
   if (!creator) {
     return c.json({ items: [], total_revenue: 0 })
   }
@@ -144,18 +156,18 @@ payments.get('/sales', async (c) => {
     JOIN users u ON p.user_id = u.id
     WHERE b.creator_id = ? AND p.status = 'completed'
     ORDER BY p.created_at DESC
-  `).bind((creator as any).id).all()
+  `).bind(creator.id).all()
 
   const totalRevenue = await db.prepare(`
     SELECT SUM(p.amount) as total
     FROM purchases p
     JOIN books b ON p.book_id = b.id
     WHERE b.creator_id = ? AND p.status = 'completed'
-  `).bind((creator as any).id).first()
+  `).bind(creator.id).first<RevenueRow>()
 
   return c.json({
     items: results.results || [],
-    total_revenue: (totalRevenue as any)?.total || 0
+    total_revenue: totalRevenue?.total ?? 0
   })
 })
 

@@ -8,8 +8,7 @@ export_.use('*', requireAuth)
 
 // GET /api/export/reading - Export reading data
 export_.get('/reading', async (c) => {
-  // @ts-ignore
-  const user = c.get('user') as { userId: string }
+  const user = c.get('user')
   const db = c.env.DB
 
   const progress = await db.prepare(`
@@ -28,8 +27,7 @@ export_.get('/reading', async (c) => {
 
 // GET /api/export/annotations - Export annotations
 export_.get('/annotations', async (c) => {
-  // @ts-ignore
-  const user = c.get('user') as { userId: string }
+  const user = c.get('user')
   const db = c.env.DB
 
   const annotations = await db.prepare(`
@@ -49,8 +47,7 @@ export_.get('/annotations', async (c) => {
 
 // GET /api/export/all - Export all data
 export_.get('/all', async (c) => {
-  // @ts-ignore
-  const user = c.get('user') as { userId: string }
+  const user = c.get('user')
   const db = c.env.DB
 
   const [progress, annotations, comments] = await Promise.all([

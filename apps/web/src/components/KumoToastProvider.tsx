@@ -21,7 +21,7 @@ export function useToast() {
 // Kumo UI Toast (lazy loaded)
 const KumoToast = React.lazy(() =>
   import('@cloudflare/kumo').then((m) => ({
-    default: m.Toast as unknown as React.ComponentType<any>,
+    default: m.Toast as unknown as React.ComponentType<Record<string, unknown>>,
   }))
 )
 

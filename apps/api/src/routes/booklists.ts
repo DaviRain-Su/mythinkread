@@ -19,8 +19,7 @@ const booklistSchema = z.object({
 
 // POST /api/booklists - Create booklist
 booklists.post('/', zValidator('json', booklistSchema), async (c) => {
-  // @ts-ignore
-  const user = c.get('user') as { userId: string }
+  const user = c.get('user')
   const db = c.env.DB
   const { title, description, tags, is_public } = c.req.valid('json')
   const now = Math.floor(Date.now() / 1000)
@@ -93,15 +92,15 @@ booklists.get('/:id', async (c) => {
 
 // POST /api/booklists/:id/items - Add book to booklist
 booklists.post('/:id/items', async (c) => {
-  // @ts-ignore
-  const user = c.get('user') as { userId: string }
+  const user = c.get('user')
   const db = c.env.DB
   const booklistId = c.req.param('id')
   const { book_id } = await c.req.json()
 
   // Verify booklist belongs to user
+  interface BooklistOwnerRow { user_id: string }
   const booklist = await db.prepare('SELECT user_id FROM booklists WHERE id = ?')
-    .bind(booklistId).first()
+    .bind(booklistId).first<BooklistOwnerRow>()
 
   if (!booklist) {
     return c.json({ error: 'BOOKLIST_NOT_FOUND' }, 404)
@@ -121,10 +120,11 @@ booklists.post('/:id/items', async (c) => {
   const now = Math.floor(Date.now() / 1000)
 
   // Get next index
+  interface MaxIdxRow { max_idx?: number | null }
   const maxIdx = await db.prepare(`
     SELECT MAX(idx) as max_idx FROM booklist_items WHERE booklist_id = ?
-  `).bind(booklistId).first()
-  const idx = ((maxIdx?.max_idx as number) || -1) + 1
+  `).bind(booklistId).first<MaxIdxRow>()
+  const idx = (maxIdx?.max_idx ?? -1) + 1
 
   await db.prepare(`
     INSERT INTO booklist_items (id, booklist_id, book_id, idx, added_at)

@@ -50,6 +50,13 @@ export interface AuthedUser {
 
 const app = new Hono<{ Bindings: Env; Variables: { user: AuthedUser; jwtPayload: AuthedUser } }>()
 
+declare module 'hono' {
+  interface ContextVariableMap {
+    user: AuthedUser
+    jwtPayload: AuthedUser
+  }
+}
+
 app.use(logger())
 app.use(cors({
   origin: ['http://localhost:3000', 'https://mythinkread.pages.dev'],

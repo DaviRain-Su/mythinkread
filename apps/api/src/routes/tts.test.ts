@@ -162,7 +162,7 @@ function makeEnv(overrides: Partial<Record<string, unknown>> = {}) {
       }
     },
     AI: {
-      async run(model: string, inputs: Record<string, unknown>) {
+      async run(_model: string, _inputs: Record<string, unknown>) {
         // Return a mock MP3-like binary (ID3 header)
         return new Uint8Array([0x49, 0x44, 0x33, 0x04])
       }

@@ -1,20 +1,11 @@
 import { Hono } from 'hono'
-import { requireAuth } from '../middleware/auth'
+import { requireAuth, requireAdmin } from '../middleware/auth'
 import type { Env, AuthedUser } from '../index'
 
 const admin = new Hono<{ Bindings: Env; Variables: { user: AuthedUser; jwtPayload: AuthedUser } }>()
 
 admin.use('*', requireAuth)
-admin.use('*', async (c, next) => {
-  const user = c.get('user')
-  const db = c.env.DB
-  const row = await db.prepare('SELECT role FROM users WHERE id = ?')
-    .bind(user.userId).first()
-  if (!row || (row as { role?: string }).role !== 'admin') {
-    return c.json({ error: 'FORBIDDEN' }, 403)
-  }
-  await next()
-})
+admin.use('*', requireAdmin)
 
 // GET /api/admin/dashboard - Dashboard stats
 admin.get('/dashboard', async (c) => {

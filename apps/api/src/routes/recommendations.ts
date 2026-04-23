@@ -1,7 +1,12 @@
 import { Hono } from 'hono'
-import type { Env } from '../index'
+import type { Env, AuthedUser } from '../index'
 
-const recommendations = new Hono<{ Bindings: Env }>()
+interface BookRow {
+  id: string
+  [key: string]: unknown
+}
+
+const recommendations = new Hono<{ Bindings: Env; Variables: { user: AuthedUser; jwtPayload: AuthedUser } }>()
 
 // Auth middleware (optional for trending)
 recommendations.use('*', async (c, next) => {
@@ -11,8 +16,7 @@ recommendations.use('*', async (c, next) => {
     try {
       const { verifyToken } = await import('../lib/jwt')
       const payload = await verifyToken(token, c.env)
-      // @ts-ignore
-      c.set('user', payload)
+      c.set('user', payload as AuthedUser)
     } catch {
       // ignore invalid token
     }
@@ -22,7 +26,6 @@ recommendations.use('*', async (c, next) => {
 
 // GET /api/recommendations/for-you - Personalized recommendations
 recommendations.get('/for-you', async (c) => {
-  // @ts-ignore
   const user = c.get('user') as { userId: string } | undefined
   if (!user) {
     return c.json({ error: 'UNAUTHORIZED' }, 401)
@@ -38,18 +41,13 @@ recommendations.get('/for-you', async (c) => {
     WHERE rp.user_id = ? AND b.status = 'published'
   `).bind(user.userId).all()
 
-  // Get user's ratings
-  const userRatings = await db.prepare(`
-    SELECT book_id, score FROM ratings WHERE user_id = ?
-  `).bind(user.userId).all()
-
   // Get preferred tags from history
   const tagCounts: Record<string, number> = {}
   for (const row of readingHistory.results || []) {
-    const tags = (row as any).tags
+    const tags = (row as { tags?: string }).tags
     if (tags) {
       try {
-        const tagList = JSON.parse(tags)
+        const tagList = JSON.parse(tags) as string[]
         for (const tag of tagList) {
           tagCounts[tag] = (tagCounts[tag] || 0) + 1
         }
@@ -65,7 +63,12 @@ recommendations.get('/for-you', async (c) => {
     .slice(0, 5)
     .map(([tag]) => tag)
 
-  let recommendedBooks: any[] = []
+  interface BookRow {
+    id: string
+    [key: string]: unknown
+  }
+
+  let recommendedBooks: BookRow[] = []
 
   if (topTags.length > 0) {
     // Build tag matching query
@@ -85,13 +88,13 @@ recommendations.get('/for-you', async (c) => {
       LIMIT ?
     `).bind(user.userId, ...tagParams, limit).all()
 
-    recommendedBooks = tagResults.results || []
+    recommendedBooks = (tagResults.results as BookRow[]) || []
   }
 
   // If not enough tag-based recommendations, add popular books
   if (recommendedBooks.length < limit) {
     const remaining = limit - recommendedBooks.length
-    const existingIds = recommendedBooks.map((b: any) => b.id)
+    const existingIds = recommendedBooks.map((b) => b.id)
     const idFilter = existingIds.length > 0
       ? `AND b.id NOT IN (${existingIds.map(() => '?').join(',')})`
       : ''
@@ -107,7 +110,7 @@ recommendations.get('/for-you', async (c) => {
       LIMIT ?
     `).bind(user.userId, ...existingIds, remaining).all()
 
-    recommendedBooks = [...recommendedBooks, ...(popularResults.results || [])]
+    recommendedBooks = [...recommendedBooks, ...(popularResults.results as BookRow[]) || []]
   }
 
   // Collaborative filtering: find similar users
@@ -124,7 +127,7 @@ recommendations.get('/for-you', async (c) => {
   `).bind(user.userId, user.userId).all()
 
   if (similarUsers.results && similarUsers.results.length > 0) {
-    const similarUserIds = similarUsers.results.map((u: any) => u.user_id)
+    const similarUserIds = similarUsers.results.map((u) => (u as { user_id: string }).user_id)
     const userFilter = similarUserIds.map(() => '?').join(',')
 
     const collaborativeResults = await db.prepare(`
@@ -140,14 +143,14 @@ recommendations.get('/for-you', async (c) => {
       GROUP BY b.id
       ORDER BY predicted_score DESC, b.read_count DESC
       LIMIT 5
-    `).bind(...similarUserIds, user.userId, ...recommendedBooks.map((b: any) => b.id)).all()
+    `).bind(...similarUserIds, user.userId, ...recommendedBooks.map((b) => b.id)).all()
 
-    recommendedBooks = [...recommendedBooks, ...(collaborativeResults.results || [])]
+    recommendedBooks = [...recommendedBooks, ...(collaborativeResults.results as BookRow[]) || []]
   }
 
   // Deduplicate
-  const seen = new Set()
-  recommendedBooks = recommendedBooks.filter((book: any) => {
+  const seen = new Set<string>()
+  recommendedBooks = recommendedBooks.filter((book) => {
     if (seen.has(book.id)) return false
     seen.add(book.id)
     return true
@@ -169,19 +172,24 @@ recommendations.get('/similar/:bookId', async (c) => {
   const limit = Math.min(parseInt(c.req.query('limit') || '10'), 50)
 
   // Get book details
+  interface BookDetailRow {
+    tags?: string
+    creator_id: string
+  }
+
   const book = await db.prepare(`
     SELECT tags, creator_id FROM books WHERE id = ? AND status = 'published'
-  `).bind(bookId).first()
+  `).bind(bookId).first<BookDetailRow>()
 
   if (!book) {
     return c.json({ error: 'BOOK_NOT_FOUND' }, 404)
   }
 
-  const tags = (book as any).tags
+  const tags = book.tags
   let tagList: string[] = []
   if (tags) {
     try {
-      tagList = JSON.parse(tags)
+      tagList = JSON.parse(tags) as string[]
     } catch {
       tagList = []
     }
@@ -195,10 +203,10 @@ recommendations.get('/similar/:bookId', async (c) => {
     WHERE b.creator_id = ? AND b.id != ? AND b.status = 'published'
     ORDER BY b.rating_avg DESC
     LIMIT ?
-  `).bind((book as any).creator_id, bookId, 3).all()
+  `).bind(book.creator_id, bookId, 3).all()
 
   // Same tags
-  let sameTags: any[] = []
+  let sameTags: BookRow[] = []
   if (tagList.length > 0) {
     const tagConditions = tagList.map(() => 'tags LIKE ?').join(' OR ')
     const tagParams = tagList.map(tag => `%${tag}%`)
@@ -213,7 +221,7 @@ recommendations.get('/similar/:bookId', async (c) => {
       LIMIT ?
     `).bind(bookId, ...tagParams, limit).all()
 
-    sameTags = tagResults.results || []
+    sameTags = (tagResults.results as BookRow[]) || []
   }
 
   // Popular in same genre (fallback)
@@ -227,12 +235,12 @@ recommendations.get('/similar/:bookId', async (c) => {
   `).bind(bookId, 3).all()
 
   // Combine and deduplicate
-  const seen = new Set([bookId])
+  const seen = new Set<string>([bookId])
   const combined = [
-    ...(sameAuthor.results || []),
+    ...(sameAuthor.results as BookRow[] || []),
     ...sameTags,
-    ...(popular.results || [])
-  ].filter((b: any) => {
+    ...(popular.results as BookRow[] || [])
+  ].filter((b) => {
     if (seen.has(b.id)) return false
     seen.add(b.id)
     return true

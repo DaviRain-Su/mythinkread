@@ -85,6 +85,7 @@ export default function CollaboratePage() {
     return () => {
       if (syncIntervalRef.current) clearInterval(syncIntervalRef.current)
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [docId])
 
   const handleContentChange = (e: React.ChangeEvent<HTMLTextAreaElement>) => {

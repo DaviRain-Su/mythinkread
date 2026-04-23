@@ -23,8 +23,7 @@ const annotationSchema = z.object({
 
 // POST /api/annotations - Create annotation
 annotations.post('/', zValidator('json', annotationSchema), async (c) => {
-  // @ts-ignore
-  const user = c.get('user') as { userId: string }
+  const user = c.get('user')
   const db = c.env.DB
   const { book_id, chapter_id, range_start, range_end, selected_text, note, color, is_public } = c.req.valid('json')
 
@@ -83,8 +82,7 @@ annotations.get('/', async (c) => {
 
 // GET /api/annotations/my - List my annotations
 annotations.get('/my', async (c) => {
-  // @ts-ignore
-  const user = c.get('user') as { userId: string }
+  const user = c.get('user')
   const db = c.env.DB
 
   const results = await db.prepare(`
@@ -101,13 +99,12 @@ annotations.get('/my', async (c) => {
 
 // DELETE /api/annotations/:id - Delete annotation
 annotations.delete('/:id', async (c) => {
-  // @ts-ignore
-  const user = c.get('user') as { userId: string }
+  const user = c.get('user')
   const db = c.env.DB
   const annotationId = c.req.param('id')
 
   const annotation = await db.prepare('SELECT user_id FROM annotations WHERE id = ?')
-    .bind(annotationId).first()
+    .bind(annotationId).first<{ user_id: string }>()
   if (!annotation) {
     return c.json({ error: 'ANNOTATION_NOT_FOUND' }, 404)
   }

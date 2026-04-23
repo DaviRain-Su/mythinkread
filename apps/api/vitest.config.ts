@@ -18,11 +18,10 @@ export default defineConfig({
     include: ['src/**/*.test.ts'],
     globals: true,
     testTimeout: 15000,
+    pool: 'forks',
     poolOptions: {
-      workers: {
-        singleWorker: true,
-        minWorkers: 1,
-        maxWorkers: 1,
+      forks: {
+        singleFork: true,
       },
     },
   }

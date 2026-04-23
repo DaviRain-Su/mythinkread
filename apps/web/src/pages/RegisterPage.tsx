@@ -6,17 +6,17 @@ import React from 'react'
 // Kumo UI components (lazy loaded)
 const KumoButton = React.lazy(() =>
   import('@cloudflare/kumo').then((m) => ({
-    default: m.Button as unknown as React.ComponentType<any>,
+    default: m.Button as unknown as React.ComponentType<Record<string, unknown>>,
   }))
 )
 const KumoInput = React.lazy(() =>
   import('@cloudflare/kumo').then((m) => ({
-    default: m.Input as unknown as React.ComponentType<any>,
+    default: m.Input as unknown as React.ComponentType<Record<string, unknown>>,
   }))
 )
 const KumoLabel = React.lazy(() =>
   import('@cloudflare/kumo').then((m) => ({
-    default: m.Label as unknown as React.ComponentType<any>,
+    default: m.Label as unknown as React.ComponentType<Record<string, unknown>>,
   }))
 )
 

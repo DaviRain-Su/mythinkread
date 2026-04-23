@@ -1,8 +1,24 @@
 import { Hono } from 'hono'
 import { generateUUID } from '../lib/uuid'
-import type { Env } from '../index'
+import type { Env, AuthedUser } from '../index'
 
-const collaborate = new Hono<{ Bindings: Env }>()
+interface DocRow {
+  id: string
+  book_id: string
+  chapter_id?: string | null
+  title: string
+  content: string
+  created_by: string
+  created_at: number
+  updated_at: number
+  version?: number
+  status?: string
+  creator_name?: string
+}
+
+
+
+const collaborate = new Hono<{ Bindings: Env; Variables: { user: AuthedUser; jwtPayload: AuthedUser } }>()
 
 // Auth middleware
 collaborate.use('*', async (c, next) => {
@@ -12,8 +28,7 @@ collaborate.use('*', async (c, next) => {
     try {
       const { verifyToken } = await import('../lib/jwt')
       const payload = await verifyToken(token, c.env)
-      // @ts-ignore
-      c.set('user', payload)
+      c.set('user', payload as AuthedUser)
     } catch {
       // ignore
     }
@@ -39,7 +54,6 @@ collaborate.get('/docs/:bookId', async (c) => {
 
 // POST /api/collaborate/docs - Create a collaborative doc
 collaborate.post('/docs', async (c) => {
-  // @ts-ignore
   const user = c.get('user') as { userId: string } | undefined
   if (!user) {
     return c.json({ error: 'UNAUTHORIZED' }, 401)
@@ -75,7 +89,7 @@ collaborate.get('/docs/:docId', async (c) => {
     FROM collaborative_docs d
     JOIN users u ON d.created_by = u.id
     WHERE d.id = ?
-  `).bind(docId).first()
+  `).bind(docId).first<DocRow>()
 
   if (!doc) {
     return c.json({ error: 'DOC_NOT_FOUND' }, 404)
@@ -96,7 +110,6 @@ collaborate.get('/docs/:docId', async (c) => {
 
 // POST /api/collaborate/docs/:docId/operations - Submit operation
 collaborate.post('/docs/:docId/operations', async (c) => {
-  // @ts-ignore
   const user = c.get('user') as { userId: string } | undefined
   if (!user) {
     return c.json({ error: 'UNAUTHORIZED' }, 401)
@@ -109,7 +122,7 @@ collaborate.post('/docs/:docId/operations', async (c) => {
   // Check if user is a collaborator
   const collaborator = await db.prepare(`
     SELECT role FROM doc_collaborators WHERE doc_id = ? AND user_id = ?
-  `).bind(docId, user.userId).first()
+  `).bind(docId, user.userId).first<{ role?: string }>()
 
   if (!collaborator) {
     return c.json({ error: 'NOT_A_COLLABORATOR' }, 403)
@@ -119,9 +132,9 @@ collaborate.post('/docs/:docId/operations', async (c) => {
 
   // Get current version
   const doc = await db.prepare('SELECT version FROM collaborative_docs WHERE id = ?')
-    .bind(docId).first()
+    .bind(docId).first<{ version?: number }>()
 
-  const currentVersion = (doc as any)?.version || 1
+  const currentVersion = doc?.version || 1
   const newVersion = currentVersion + 1
 
   // Store operation
@@ -171,7 +184,6 @@ collaborate.get('/docs/:docId/operations', async (c) => {
 
 // POST /api/collaborate/docs/:docId/collaborators - Add collaborator
 collaborate.post('/docs/:docId/collaborators', async (c) => {
-  // @ts-ignore
   const user = c.get('user') as { userId: string } | undefined
   if (!user) {
     return c.json({ error: 'UNAUTHORIZED' }, 401)
@@ -184,9 +196,9 @@ collaborate.post('/docs/:docId/collaborators', async (c) => {
   // Check if current user is admin
   const currentUser = await db.prepare(`
     SELECT role FROM doc_collaborators WHERE doc_id = ? AND user_id = ?
-  `).bind(docId, user.userId).first()
+  `).bind(docId, user.userId).first<{ role?: string }>()
 
-  if (!currentUser || (currentUser as any).role !== 'admin') {
+  if (!currentUser || currentUser.role !== 'admin') {
     return c.json({ error: 'FORBIDDEN' }, 403)
   }
 

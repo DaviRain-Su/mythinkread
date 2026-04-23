@@ -22,7 +22,7 @@ const CommandPalette = React.lazy(() =>
 )
 const KumoButton = React.lazy(() =>
   import('@cloudflare/kumo').then((m) => ({
-    default: m.Button as unknown as React.ComponentType<any>,
+    default: m.Button as unknown as React.ComponentType<Record<string, unknown>>,
   }))
 )
 

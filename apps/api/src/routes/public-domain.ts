@@ -72,9 +72,18 @@ publicDomain.get('/books/:id/read/:chapterId', async (c) => {
   const bookId = c.req.param('id')
   const chapterId = c.req.param('chapterId')
 
+  interface ChapterRow {
+    id: string
+    book_id: string
+    idx: number
+    title: string
+    word_count: number
+    content_cid?: string | null
+  }
+
   const chapter = await db.prepare(`
     SELECT * FROM public_domain_chapters WHERE id = ? AND book_id = ?
-  `).bind(chapterId, bookId).first()
+  `).bind(chapterId, bookId).first<ChapterRow>()
 
   if (!chapter) {
     return c.json({ error: 'CHAPTER_NOT_FOUND' }, 404)
@@ -83,7 +92,7 @@ publicDomain.get('/books/:id/read/:chapterId', async (c) => {
   // Fetch content from KV/IPFS
   let content = ''
   try {
-    const contentCid = (chapter as any).content_cid
+    const contentCid = chapter.content_cid
     if (contentCid) {
       content = await c.env.KV.get(`pd:${contentCid}`) || ''
     }
@@ -104,10 +113,12 @@ publicDomain.post('/import', requireAuth, async (c) => {
   const user = c.get('user')
   const db = c.env.DB
 
-  const row = await db.prepare('SELECT role FROM users WHERE id = ?')
-    .bind(user.userId).first()
+  interface RoleRow { role?: string }
 
-  if (!row || (row as any).role !== 'admin') {
+  const row = await db.prepare('SELECT role FROM users WHERE id = ?')
+    .bind(user.userId).first<RoleRow>()
+
+  if (!row || row.role !== 'admin') {
     return c.json({ error: 'FORBIDDEN' }, 403)
   }
 

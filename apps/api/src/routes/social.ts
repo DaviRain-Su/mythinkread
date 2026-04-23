@@ -39,8 +39,9 @@ social.post('/follow/:userId', async (c) => {
     `).bind(generateUUID(), user.userId, 'follow', targetUserId, now).run()
 
     return c.json({ success: true })
-  } catch (err: any) {
-    if (err.message?.includes('UNIQUE constraint failed')) {
+  } catch (err: unknown) {
+    const message = err instanceof Error ? err.message : String(err)
+    if (message.includes('UNIQUE constraint failed')) {
       return c.json({ error: 'ALREADY_FOLLOWING' }, 409)
     }
     throw err
