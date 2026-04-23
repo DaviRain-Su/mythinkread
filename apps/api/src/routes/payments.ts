@@ -1,42 +1,19 @@
 import { Hono } from 'hono'
 import { zValidator } from '@hono/zod-validator'
 import { z } from 'zod'
-import type { Env } from '../index'
+import { requireAuth } from '../middleware/auth'
+import type { Env, AuthedUser } from '../index'
 
-const payments = new Hono<{ Bindings: Env }>()
+const payments = new Hono<{ Bindings: Env; Variables: { user: AuthedUser; jwtPayload: AuthedUser } }>()
 
-// Auth middleware
-payments.use('*', async (c, next) => {
-  const authHeader = c.req.header('Authorization')
-  if (!authHeader || !authHeader.startsWith('Bearer ')) {
-    return c.json({ error: 'UNAUTHORIZED' }, 401)
-  }
+payments.use('*', requireAuth)
 
-  const token = authHeader.slice(7)
-  try {
-    const { verifyToken } = await import('../lib/jwt')
-    const payload = await verifyToken(token, c.env)
-    // @ts-ignore
-    c.set('user', payload)
-    await next()
-  } catch {
-    return c.json({ error: 'INVALID_TOKEN' }, 401)
-  }
-})
-
-function generateUUID(): string {
-  const timestamp = Date.now()
-  const timeHex = timestamp.toString(16).padStart(12, '0')
-  const random = Array.from(crypto.getRandomValues(new Uint8Array(10)))
-    .map(b => b.toString(16).padStart(2, '0'))
-    .join('')
-  return `${timeHex.slice(0, 8)}-${timeHex.slice(8)}-7${random.slice(0, 3)}-${(parseInt(random.slice(3, 4), 16) & 0x3 | 0x8).toString(16)}${random.slice(4, 7)}-${random.slice(7, 15)}`
-}
+import { generateUUID } from '../lib/uuid'
 
 // GET /api/payments/books/:bookId - Check if user has purchased book
 payments.get('/books/:bookId', async (c) => {
   // @ts-ignore
-  const user = c.get('user') as { userId: string }
+  const user = c.get('user')
   const db = c.env.DB
   const bookId = c.req.param('bookId')
 
@@ -70,7 +47,7 @@ payments.get('/books/:bookId', async (c) => {
 // POST /api/payments/books/:bookId - Create purchase
 payments.post('/books/:bookId', async (c) => {
   // @ts-ignore
-  const user = c.get('user') as { userId: string }
+  const user = c.get('user')
   const db = c.env.DB
   const bookId = c.req.param('bookId')
   const { tx_hash } = await c.req.json()
@@ -128,7 +105,7 @@ payments.post('/books/:bookId', async (c) => {
 // GET /api/payments/history - Get purchase history
 payments.get('/history', async (c) => {
   // @ts-ignore
-  const user = c.get('user') as { userId: string }
+  const user = c.get('user')
   const db = c.env.DB
   const page = parseInt(c.req.query('page') || '1')
   const limit = Math.min(parseInt(c.req.query('limit') || '20'), 100)
@@ -149,7 +126,7 @@ payments.get('/history', async (c) => {
 // GET /api/payments/sales - Get sales history (for creators)
 payments.get('/sales', async (c) => {
   // @ts-ignore
-  const user = c.get('user') as { userId: string }
+  const user = c.get('user')
   const db = c.env.DB
 
   // Get creator ID

@@ -1,38 +1,15 @@
 import { Hono } from 'hono'
 import { zValidator } from '@hono/zod-validator'
 import { z } from 'zod'
+import { requireAuth } from '../middleware/auth'
 import { moderateContent } from '../lib/ai'
-import type { Env } from '../index'
+import type { Env, AuthedUser } from '../index'
 
-const comments = new Hono<{ Bindings: Env }>()
+const comments = new Hono<{ Bindings: Env; Variables: { user: AuthedUser; jwtPayload: AuthedUser } }>()
 
-// Auth middleware
-comments.use('*', async (c, next) => {
-  const authHeader = c.req.header('Authorization')
-  if (!authHeader || !authHeader.startsWith('Bearer ')) {
-    return c.json({ error: 'UNAUTHORIZED' }, 401)
-  }
+comments.use('*', requireAuth)
 
-  const token = authHeader.slice(7)
-  try {
-    const { verifyToken } = await import('../lib/jwt')
-    const payload = await verifyToken(token, c.env)
-    // @ts-ignore
-    c.set('user', payload)
-    await next()
-  } catch {
-    return c.json({ error: 'INVALID_TOKEN' }, 401)
-  }
-})
-
-function generateUUID(): string {
-  const timestamp = Date.now()
-  const timeHex = timestamp.toString(16).padStart(12, '0')
-  const random = Array.from(crypto.getRandomValues(new Uint8Array(10)))
-    .map(b => b.toString(16).padStart(2, '0'))
-    .join('')
-  return `${timeHex.slice(0, 8)}-${timeHex.slice(8)}-7${random.slice(0, 3)}-${(parseInt(random.slice(3, 4), 16) & 0x3 | 0x8).toString(16)}${random.slice(4, 7)}-${random.slice(7, 15)}`
-}
+import { generateUUID } from '../lib/uuid'
 
 const commentSchema = z.object({
   book_id: z.string().min(1),
@@ -131,8 +108,6 @@ comments.get('/', async (c) => {
 
 // POST /api/comments/:id/like - Like comment
 comments.post('/:id/like', async (c) => {
-  // @ts-ignore
-  const user = c.get('user') as { userId: string }
   const db = c.env.DB
   const commentId = c.req.param('id')
 

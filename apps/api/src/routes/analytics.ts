@@ -1,26 +1,10 @@
 import { Hono } from 'hono'
-import type { Env } from '../index'
+import { requireAuth } from '../middleware/auth'
+import type { Env, AuthedUser } from '../index'
 
-const analytics = new Hono<{ Bindings: Env }>()
+const analytics = new Hono<{ Bindings: Env; Variables: { user: AuthedUser; jwtPayload: AuthedUser } }>()
 
-// Auth middleware
-analytics.use('*', async (c, next) => {
-  const authHeader = c.req.header('Authorization')
-  if (!authHeader || !authHeader.startsWith('Bearer ')) {
-    return c.json({ error: 'UNAUTHORIZED' }, 401)
-  }
-
-  const token = authHeader.slice(7)
-  try {
-    const { verifyToken } = await import('../lib/jwt')
-    const payload = await verifyToken(token, c.env)
-    // @ts-ignore
-    c.set('user', payload)
-    await next()
-  } catch {
-    return c.json({ error: 'INVALID_TOKEN' }, 401)
-  }
-})
+analytics.use('*', requireAuth)
 
 // GET /api/analytics/overview - Overview stats
 analytics.get('/overview', async (c) => {

@@ -1,10 +1,11 @@
 import { Hono } from 'hono'
 import { zValidator } from '@hono/zod-validator'
 import { z } from 'zod'
+import { requireAuth } from '../middleware/auth'
 import { generateText, generateContinuation, generateRewrite, generateCoverDescription, moderateContent } from '../lib/ai'
 import type { Env, AuthedUser } from '../index'
 
-const ai = new Hono<{ Bindings: Env; Variables: { user: AuthedUser } }>()
+const ai = new Hono<{ Bindings: Env; Variables: { user: AuthedUser; jwtPayload: AuthedUser } }>()
 
 /**
  * TTL for AI draft snapshots in KV.
@@ -56,23 +57,7 @@ async function checkRateLimit(kv: KVNamespace, key: string, limit: number, windo
   return true
 }
 
-// Auth middleware
-ai.use('*', async (c, next) => {
-  const authHeader = c.req.header('Authorization')
-  if (!authHeader || !authHeader.startsWith('Bearer ')) {
-    return c.json({ error: 'UNAUTHORIZED' }, 401)
-  }
-
-  const token = authHeader.slice(7)
-  try {
-    const { verifyToken } = await import('../lib/jwt')
-    const payload = await verifyToken(token, c.env)
-    c.set('user', payload)
-    await next()
-  } catch {
-    return c.json({ error: 'INVALID_TOKEN' }, 401)
-  }
-})
+ai.use('*', requireAuth)
 
 const generateSchema = z.object({
   prompt: z.string().min(1).max(2000),

@@ -1,6 +1,7 @@
 import { Hono } from 'hono'
 import nacl from 'tweetnacl'
 import bs58 from 'bs58'
+import { requireAuth } from '../middleware/auth'
 import type { Env, AuthedUser } from '../index'
 
 const solana = new Hono<{ Bindings: Env; Variables: { user: AuthedUser; jwtPayload: AuthedUser } }>()
@@ -18,23 +19,7 @@ function randomNonce(): string {
   return bs58.encode(bytes)
 }
 
-// Public auth middleware — applied to every subsequent route.
-solana.use('*', async (c, next) => {
-  const authHeader = c.req.header('Authorization')
-  if (!authHeader || !authHeader.startsWith('Bearer ')) {
-    return c.json({ error: 'UNAUTHORIZED' }, 401)
-  }
-
-  const token = authHeader.slice(7)
-  try {
-    const { verifyToken } = await import('../lib/jwt')
-    const payload = await verifyToken(token, c.env)
-    c.set('user', payload as AuthedUser)
-    await next()
-  } catch {
-    return c.json({ error: 'INVALID_TOKEN' }, 401)
-  }
-})
+solana.use('*', requireAuth)
 
 /**
  * GET /api/solana/nonce?wallet=<address>

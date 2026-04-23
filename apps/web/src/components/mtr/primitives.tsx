@@ -1,4 +1,4 @@
-import { useLangStore } from '../../stores/langStore'
+import { useI18nStore } from '../../stores/i18nStore'
 import type { CSSProperties, ReactNode } from 'react'
 
 export type AIType = 'pure' | 'light' | 'heavy'
@@ -111,7 +111,7 @@ export function AIRatioBar({
 }
 
 export function Badge({ type, sm }: { type: AIType; sm?: boolean }) {
-  const { lang } = useLangStore()
+  const { lang } = useI18nStore()
   const b = AI_BADGES[type]
   if (!b) return null
   return (
@@ -233,7 +233,7 @@ export function BilingualTitle({
   size?: number
   align?: 'left' | 'center' | 'right'
 }) {
-  const { lang } = useLangStore()
+  const { lang } = useI18nStore()
   return (
     <div style={{ textAlign: align, lineHeight: 1.1 }}>
       <div

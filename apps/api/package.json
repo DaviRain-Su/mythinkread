@@ -6,7 +6,7 @@
   "scripts": {
     "dev": "wrangler dev",
     "deploy": "wrangler deploy",
-    "lint": "eslint . --ext ts --report-unused-disable-directives",
+    "lint": "eslint src --ext ts --report-unused-disable-directives",
     "typecheck": "tsc --noEmit",
     "test": "vitest run"
   },

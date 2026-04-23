@@ -1,40 +1,15 @@
 import { Hono } from 'hono'
-import type { Env } from '../index'
+import { requireAuth } from '../middleware/auth'
+import { generateUUID } from '../lib/uuid'
+import type { Env, AuthedUser } from '../index'
 
-const social = new Hono<{ Bindings: Env }>()
+const social = new Hono<{ Bindings: Env; Variables: { user: AuthedUser; jwtPayload: AuthedUser } }>()
 
-// Auth middleware
-social.use('*', async (c, next) => {
-  const authHeader = c.req.header('Authorization')
-  if (!authHeader || !authHeader.startsWith('Bearer ')) {
-    return c.json({ error: 'UNAUTHORIZED' }, 401)
-  }
-
-  const token = authHeader.slice(7)
-  try {
-    const { verifyToken } = await import('../lib/jwt')
-    const payload = await verifyToken(token, c.env)
-    // @ts-ignore
-    c.set('user', payload)
-    await next()
-  } catch {
-    return c.json({ error: 'INVALID_TOKEN' }, 401)
-  }
-})
-
-function generateUUID(): string {
-  const timestamp = Date.now()
-  const timeHex = timestamp.toString(16).padStart(12, '0')
-  const random = Array.from(crypto.getRandomValues(new Uint8Array(10)))
-    .map(b => b.toString(16).padStart(2, '0'))
-    .join('')
-  return `${timeHex.slice(0, 8)}-${timeHex.slice(8)}-7${random.slice(0, 3)}-${(parseInt(random.slice(3, 4), 16) & 0x3 | 0x8).toString(16)}${random.slice(4, 7)}-${random.slice(7, 15)}`
-}
+social.use('*', requireAuth)
 
 // POST /api/social/follow/:userId - Follow a user
 social.post('/follow/:userId', async (c) => {
-  // @ts-ignore
-  const user = c.get('user') as { userId: string }
+  const user = c.get('user')
   const db = c.env.DB
   const targetUserId = c.req.param('userId')
 
@@ -74,8 +49,7 @@ social.post('/follow/:userId', async (c) => {
 
 // DELETE /api/social/follow/:userId - Unfollow a user
 social.delete('/follow/:userId', async (c) => {
-  // @ts-ignore
-  const user = c.get('user') as { userId: string }
+  const user = c.get('user')
   const db = c.env.DB
   const targetUserId = c.req.param('userId')
 
@@ -88,8 +62,7 @@ social.delete('/follow/:userId', async (c) => {
 
 // GET /api/social/following - List following
 social.get('/following', async (c) => {
-  // @ts-ignore
-  const user = c.get('user') as { userId: string }
+  const user = c.get('user')
   const db = c.env.DB
 
   const results = await db.prepare(`
@@ -105,8 +78,7 @@ social.get('/following', async (c) => {
 
 // GET /api/social/followers - List followers
 social.get('/followers', async (c) => {
-  // @ts-ignore
-  const user = c.get('user') as { userId: string }
+  const user = c.get('user')
   const db = c.env.DB
 
   const results = await db.prepare(`
@@ -122,8 +94,7 @@ social.get('/followers', async (c) => {
 
 // GET /api/social/feed - Activity feed
 social.get('/feed', async (c) => {
-  // @ts-ignore
-  const user = c.get('user') as { userId: string }
+  const user = c.get('user')
   const db = c.env.DB
   const page = parseInt(c.req.query('page') || '1')
   const limit = Math.min(parseInt(c.req.query('limit') || '20'), 100)
@@ -148,8 +119,7 @@ social.get('/feed', async (c) => {
 
 // POST /api/social/activities - Create activity (internal use)
 social.post('/activities', async (c) => {
-  // @ts-ignore
-  const user = c.get('user') as { userId: string }
+  const user = c.get('user')
   const db = c.env.DB
   const { type, book_id, content } = await c.req.json()
 

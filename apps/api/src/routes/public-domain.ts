@@ -1,7 +1,8 @@
 import { Hono } from 'hono'
-import type { Env } from '../index'
+import { requireAuth } from '../middleware/auth'
+import type { Env, AuthedUser } from '../index'
 
-const publicDomain = new Hono<{ Bindings: Env }>()
+const publicDomain = new Hono<{ Bindings: Env; Variables: { user: AuthedUser; jwtPayload: AuthedUser } }>()
 
 // GET /api/public-domain/books - List public domain books
 publicDomain.get('/books', async (c) => {
@@ -99,26 +100,18 @@ publicDomain.get('/books/:id/read/:chapterId', async (c) => {
 })
 
 // POST /api/public-domain/import - Import a public domain book (admin only)
-publicDomain.post('/import', async (c) => {
-  const authHeader = c.req.header('Authorization')
-  if (!authHeader || !authHeader.startsWith('Bearer ')) {
-    return c.json({ error: 'UNAUTHORIZED' }, 401)
+publicDomain.post('/import', requireAuth, async (c) => {
+  const user = c.get('user')
+  const db = c.env.DB
+
+  const row = await db.prepare('SELECT role FROM users WHERE id = ?')
+    .bind(user.userId).first()
+
+  if (!row || (row as any).role !== 'admin') {
+    return c.json({ error: 'FORBIDDEN' }, 403)
   }
 
-  const token = authHeader.slice(7)
-  try {
-    const { verifyToken } = await import('../lib/jwt')
-    const payload = await verifyToken(token, c.env)
-    
-    const db = c.env.DB
-    const user = await db.prepare('SELECT role FROM users WHERE id = ?')
-      .bind(payload.userId).first()
-    
-    if (!user || (user as any).role !== 'admin') {
-      return c.json({ error: 'FORBIDDEN' }, 403)
-    }
-
-    const { title, author, description, content, source, source_url, language, publish_year, category, tags } = await c.req.json()
+  const { title, author, description, content, source, source_url, language, publish_year, category, tags } = await c.req.json()
 
     const now = Math.floor(Date.now() / 1000)
     const bookId = `pd-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`
@@ -136,9 +129,6 @@ publicDomain.post('/import', async (c) => {
     `).bind(bookId, title, author, description, contentKey, source, source_url, language, publish_year, category, tags ? JSON.stringify(tags) : null, wordCount, now).run()
 
     return c.json({ id: bookId, title, status: 'imported' }, 201)
-  } catch {
-    return c.json({ error: 'INVALID_TOKEN' }, 401)
-  }
 })
 
 // GET /api/public-domain/sources - List available sources

@@ -1,6 +1,6 @@
 import { Hono } from 'hono'
+import { requireAuth } from '../middleware/auth'
 import type { Env, AuthedUser } from '../index'
-import { verifyToken } from '../lib/jwt'
 import {
   Grade,
   initState,
@@ -10,19 +10,9 @@ import {
   type FSRSState,
 } from '../lib/fsrs'
 
-const fsrsRoutes = new Hono<{ Bindings: Env; Variables: { jwtPayload: AuthedUser } }>()
+const fsrsRoutes = new Hono<{ Bindings: Env; Variables: { user: AuthedUser; jwtPayload: AuthedUser } }>()
 
-// Middleware: require auth
-fsrsRoutes.use('*', async (c, next) => {
-  const auth = c.req.header('Authorization')
-  if (!auth?.startsWith('Bearer ')) {
-    return c.json({ error: 'Unauthorized' }, 401)
-  }
-  const token = auth.slice(7)
-  const payload = await verifyToken(token, c.env)
-  c.set('jwtPayload', payload)
-  await next()
-})
+fsrsRoutes.use('*', requireAuth)
 
 // GET /api/fsrs/cards — list user's memory cards
 fsrsRoutes.get('/cards', async (c) => {

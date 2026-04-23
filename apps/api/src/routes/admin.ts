@@ -1,34 +1,19 @@
 import { Hono } from 'hono'
+import { requireAuth } from '../middleware/auth'
 import type { Env, AuthedUser } from '../index'
 
 const admin = new Hono<{ Bindings: Env; Variables: { user: AuthedUser; jwtPayload: AuthedUser } }>()
 
-// Admin auth middleware
+admin.use('*', requireAuth)
 admin.use('*', async (c, next) => {
-  const authHeader = c.req.header('Authorization')
-  if (!authHeader || !authHeader.startsWith('Bearer ')) {
-    return c.json({ error: 'UNAUTHORIZED' }, 401)
+  const user = c.get('user')
+  const db = c.env.DB
+  const row = await db.prepare('SELECT role FROM users WHERE id = ?')
+    .bind(user.userId).first()
+  if (!row || (row as { role?: string }).role !== 'admin') {
+    return c.json({ error: 'FORBIDDEN' }, 403)
   }
-
-  const token = authHeader.slice(7)
-  try {
-    const { verifyToken } = await import('../lib/jwt')
-    const payload = await verifyToken(token, c.env)
-    
-    // Check admin role
-    const db = c.env.DB
-    const user = await db.prepare('SELECT role FROM users WHERE id = ?')
-      .bind(payload.userId).first()
-    
-    if (!user || (user as { role?: string }).role !== 'admin') {
-      return c.json({ error: 'FORBIDDEN' }, 403)
-    }
-    
-    c.set('user', payload as AuthedUser)
-    await next()
-  } catch {
-    return c.json({ error: 'INVALID_TOKEN' }, 401)
-  }
+  await next()
 })
 
 // GET /api/admin/dashboard - Dashboard stats
